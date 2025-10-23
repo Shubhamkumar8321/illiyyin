@@ -1,0 +1,1077 @@
+// server.js (ESM - cleaned and updated)
+import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import path from "path";
+import { fileURLToPath } from "url";
+import multer from "multer";
+import fs from "fs";
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+
+// Security: Warn if using default secret in production
+if (process.env.NODE_ENV === "production" && JWT_SECRET === "your-secret-key") {
+  console.warn("⚠️  WARNING: Using default JWT secret in production!");
+}
+
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+// Static uploads
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Health endpoint
+app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// MongoDB Connection
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/DonationDB";
+mongoose
+  .connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err);
+    process.exit(1);
+  });
+
+// Multer configuration for file uploads
+const uploadDirBase = path.join(__dirname, "uploads", "documents");
+const storage = multer.diskStorage({
+  destination(req, file, cb) {
+    if (!fs.existsSync(uploadDirBase)) {
+      fs.mkdirSync(uploadDirBase, { recursive: true });
+    }
+    cb(null, uploadDirBase);
+  },
+  filename(req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter(req, file, cb) {
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+    ];
+
+    if (
+      allowedTypes.includes(file.mimetype) ||
+      file.mimetype.startsWith("image/")
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only document and image files are allowed"));
+    }
+  },
+});
+
+function multerErrorHandler(err, _req, res, next) {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ error: err.message });
+  }
+  if (err) {
+    return res.status(400).json({ error: err.message || "File upload error" });
+  }
+  next();
+}
+
+// Mongoose Schemas
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+        "Please enter a valid email",
+      ],
+    },
+    password: { type: String, required: true },
+    role: { type: String, enum: ["admin", "fundraiser"], required: true },
+    organization: String,
+    documents: [
+      {
+        name: String,
+        url: String,
+        filePath: String,
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
+    isVerified: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+const campaignSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    description: String,
+    category: {
+      type: String,
+      enum: [
+        "Education",
+        "Health",
+        "Environment",
+        "Animals",
+        "Community",
+        "Other",
+      ],
+      required: true,
+    },
+    goal: { type: Number, required: true, min: 1 },
+    raised: { type: Number, default: 0 },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "completed"],
+      default: "pending",
+    },
+    creator: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    endDate: {
+      type: Date,
+      validate: {
+        validator: function (value) {
+          return value > new Date();
+        },
+        message: "End date must be in the future",
+      },
+    },
+    images: [String],
+    notes: [
+      {
+        content: String,
+        createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    donations: [
+      {
+        donorName: String,
+        amount: { type: Number, min: 1 },
+        message: String,
+        donatedAt: { type: Date, default: Date.now },
+        isAnonymous: Boolean,
+      },
+    ],
+  },
+  { timestamps: true }
+);
+
+const statCardSchema = new mongoose.Schema(
+  {
+    label: String,
+    value: Number,
+    trend: String,
+    trendValue: Number,
+  },
+  { timestamps: true }
+);
+
+// Mongoose Models
+const User = mongoose.model("User", userSchema);
+const Campaign = mongoose.model("Campaign", campaignSchema);
+const StatCard = mongoose.model("StatCard", statCardSchema);
+
+// Authentication Middlewares
+const authenticateToken = (req, res, next) => {
+  try {
+    const authHeader = req.headers["authorization"] || "";
+    const token =
+      authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : null;
+
+    if (!token) {
+      return res.status(401).json({ error: "Access token required" });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, payload) => {
+      if (err) {
+        return res.status(403).json({ error: "Invalid or expired token" });
+      }
+      req.user = payload; // { id, email, role }
+      next();
+    });
+  } catch (err) {
+    return res.status(500).json({ error: "Server error in authentication" });
+  }
+};
+
+const requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+};
+
+const requireFundraiser = (req, res, next) => {
+  if (!req.user || req.user.role !== "fundraiser") {
+    return res.status(403).json({ error: "Fundraiser access required" });
+  }
+  next();
+};
+
+const ENFORCE_AUTH = true;
+
+// Auth Routes
+app.post("/api/register", async (req, res) => {
+  try {
+    const { name, email, password, role, organization } = req.body;
+
+    // Validation
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (!["admin", "fundraiser"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role" });
+    }
+
+    if (role === "fundraiser" && !organization) {
+      return res
+        .status(400)
+        .json({ error: "Organization is required for fundraisers" });
+    }
+
+    // Check if user exists
+    const existingUser = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    // Hash password and create user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      name,
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      role,
+      organization: role === "fundraiser" ? organization : undefined,
+    });
+
+    await user.save();
+
+    // Generate token
+    const token = jwt.sign(
+      { id: user._id.toString(), email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    res.status(201).json({
+      message: "User created successfully",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organization: user.organization,
+      },
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ error: "Email already in use" });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Missing credentials" });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id.toString(), email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organization: user.organization,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Profile Routes
+app.get("/api/profile", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/api/profile", authenticateToken, async (req, res) => {
+  try {
+    const { name, organization } = req.body;
+    const updates = {};
+
+    if (name) updates.name = name;
+    if (organization) updates.organization = organization;
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Campaign Routes
+app.post(
+  "/api/campaigns",
+  authenticateToken,
+  requireFundraiser,
+  async (req, res) => {
+    try {
+      const { title, content, description, category, goal, endDate, images } =
+        req.body;
+
+      if (!title || !content || !category || !goal || !endDate) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Validate end date
+      if (new Date(endDate) <= new Date()) {
+        return res
+          .status(400)
+          .json({ error: "End date must be in the future" });
+      }
+
+      const plainDescription = description
+        ? description.replace(/<\/?[^>]+(>|$)/g, "")
+        : content.replace(/<\/?[^>]+(>|$)/g, "");
+
+      const campaign = new Campaign({
+        title,
+        content,
+        description: plainDescription,
+        category,
+        goal,
+        creator: req.user.id,
+        endDate: new Date(endDate),
+        images: images || [],
+      });
+
+      await campaign.save();
+      await campaign.populate("creator", "name email");
+
+      res.status(201).json(campaign);
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        return res.status(400).json({ error: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+app.get("/api/campaigns", async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      category,
+      search,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    const query = {};
+    if (status) query.status = status;
+    if (category) query.category = category;
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const sortOptions = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
+
+    let campaigns = await Campaign.find(query)
+      .populate("creator", "name email")
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(parseInt(limit, 10));
+
+    // ✅ Description se HTML tags remove karo
+    campaigns = campaigns.map((c) => {
+      if (c.description) {
+        c.description = c.description.replace(/<\/?[^>]+(>|$)/g, "");
+      }
+      return c;
+    });
+
+    const totalDocs = await Campaign.countDocuments(query);
+    const totalPages = Math.ceil(totalDocs / parseInt(limit, 10));
+
+    res.json({
+      docs: campaigns,
+      totalDocs,
+      limit: parseInt(limit, 10),
+      page: parseInt(page, 10),
+      totalPages,
+      hasNextPage: parseInt(page, 10) < totalPages,
+      hasPrevPage: parseInt(page, 10) > 1,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/campaigns/:id", async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.id)
+      .populate("creator", "name email")
+      .populate("notes.createdBy", "name");
+
+    if (!campaign) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+    if (campaign.description) {
+      campaign.description = campaign.description.replace(
+        /<\/?[^>]+(>|$)/g,
+        ""
+      );
+    }
+    res.json(campaign);
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ error: "Invalid campaign ID" });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/api/campaigns/:id", authenticateToken, async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.id);
+    if (!campaign) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+
+    if (
+      campaign.creator.toString() !== req.user.id &&
+      req.user.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to update this campaign" });
+    }
+
+    const updates = { ...req.body, updatedAt: Date.now() };
+    const updatedCampaign = await Campaign.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    ).populate("creator", "name email");
+
+    res.json(updatedCampaign);
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/campaigns/:id", authenticateToken, async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.id);
+    if (!campaign) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+
+    if (
+      campaign.creator.toString() !== req.user.id &&
+      req.user.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to delete this campaign" });
+    }
+
+    await Campaign.findByIdAndDelete(req.params.id);
+    res.json({ message: "Campaign deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Campaign Status Management
+const approveMiddlewares = ENFORCE_AUTH
+  ? [authenticateToken, requireAdmin]
+  : [];
+const rejectMiddlewares = ENFORCE_AUTH ? [authenticateToken, requireAdmin] : [];
+
+app.patch(
+  "/api/campaigns/:id/approve",
+  ...approveMiddlewares,
+  async (req, res) => {
+    try {
+      const campaign = await Campaign.findByIdAndUpdate(
+        req.params.id,
+        { status: "approved", updatedAt: new Date() },
+        { new: true }
+      ).populate("creator", "name email");
+
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      res.json({ message: "Campaign approved", campaign });
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  }
+);
+
+app.patch(
+  "/api/campaigns/:id/reject",
+  ...rejectMiddlewares,
+  async (req, res) => {
+    try {
+      const campaign = await Campaign.findByIdAndUpdate(
+        req.params.id,
+        { status: "rejected", updatedAt: new Date() },
+        { new: true }
+      ).populate("creator", "name email");
+
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      res.json({ message: "Campaign rejected", campaign });
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  }
+);
+
+app.patch(
+  "/api/campaigns/:id/status",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { status } = req.body;
+
+      if (!["pending", "approved", "rejected", "completed"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      const campaign = await Campaign.findByIdAndUpdate(
+        req.params.id,
+        { status, updatedAt: new Date() },
+        { new: true }
+      ).populate("creator", "name email");
+
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      res.json({ message: `Status updated to ${status}`, campaign });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Campaign Notes (Admin only)
+app.post(
+  "/api/campaigns/:id/notes",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { content } = req.body;
+
+      if (!content) {
+        return res.status(400).json({ error: "Note content is required" });
+      }
+
+      const campaign = await Campaign.findById(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      campaign.notes.push({
+        content,
+        createdBy: req.user.id,
+        createdAt: new Date(),
+      });
+
+      await campaign.save();
+      await campaign.populate("notes.createdBy", "name");
+
+      res.json(campaign.notes);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Donation Routes
+app.post("/api/campaigns/:id/donate", async (req, res) => {
+  try {
+    const { donorName, amount, message, isAnonymous } = req.body;
+
+    if (!donorName || !amount || amount <= 0) {
+      return res
+        .status(400)
+        .json({ error: "Valid donor name and amount are required" });
+    }
+
+    const campaign = await Campaign.findById(req.params.id);
+    if (!campaign) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+
+    if (campaign.status !== "approved") {
+      return res
+        .status(400)
+        .json({ error: "Cannot donate to a campaign that is not approved" });
+    }
+
+    const donation = {
+      donorName: isAnonymous ? "Anonymous" : donorName,
+      amount,
+      message: message || "",
+      isAnonymous: !!isAnonymous,
+      donatedAt: new Date(),
+    };
+
+    campaign.donations.push(donation);
+    campaign.raised += amount;
+
+    if (campaign.raised >= campaign.goal) {
+      campaign.status = "completed";
+    }
+
+    await campaign.save();
+
+    res.json({
+      message: "Donation successful",
+      donation: campaign.donations[campaign.donations.length - 1],
+    });
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ error: "Invalid campaign ID" });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin Routes
+app.get(
+  "/api/admin/users",
+  authenticateToken,
+  requireAdmin,
+  async (_req, res) => {
+    try {
+      const users = await User.find().select("-password");
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+app.get(
+  "/api/admin/fundraisers",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const fundraisers = await User.find({ role: "fundraiser" }).select(
+        "-password"
+      );
+
+      const fundraisersWithCampaigns = await Promise.all(
+        fundraisers.map(async (fundraiser) => {
+          const campaigns = await Campaign.find({ creator: fundraiser._id });
+          return {
+            ...fundraiser.toObject(),
+            campaigns,
+            documents: fundraiser.documents,
+          };
+        })
+      );
+
+      res.json(fundraisersWithCampaigns);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+app.get(
+  "/api/admin/fundraisers/:id",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ error: "Invalid fundraiser ID" });
+      }
+
+      const fundraiser = await User.findOne({
+        _id: req.params.id,
+        role: "fundraiser",
+      }).select("-password");
+
+      if (!fundraiser) {
+        return res.status(404).json({ error: "Fundraiser not found" });
+      }
+
+      const campaigns = await Campaign.find({ creator: fundraiser._id });
+
+      res.json({
+        ...fundraiser.toObject(),
+        campaigns,
+        documents: fundraiser.documents || [],
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Dashboard Statistics
+app.get("/api/dashboard/stats", authenticateToken, async (req, res) => {
+  try {
+    let query = {};
+    if (req.user.role === "fundraiser") {
+      query.creator = req.user.id;
+    }
+
+    const totalCampaigns = await Campaign.countDocuments(query);
+    const pendingCampaigns = await Campaign.countDocuments({
+      ...query,
+      status: "pending",
+    });
+    const approvedCampaigns = await Campaign.countDocuments({
+      ...query,
+      status: "approved",
+    });
+    const rejectedCampaigns = await Campaign.countDocuments({
+      ...query,
+      status: "rejected",
+    });
+    const completedCampaigns = await Campaign.countDocuments({
+      ...query,
+      status: "completed",
+    });
+
+    const totalRaisedResult = await Campaign.aggregate([
+      { $match: query },
+      { $group: { _id: null, total: { $sum: "$raised" } } },
+    ]);
+
+    const totalRaised =
+      totalRaisedResult.length > 0 ? totalRaisedResult[0].total : 0;
+
+    res.json({
+      totalCampaigns,
+      pendingCampaigns,
+      approvedCampaigns,
+      rejectedCampaigns,
+      completedCampaigns,
+      totalRaised,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Document Routes
+const uploadHandler = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const fileUrl = `/uploads/documents/${req.file.filename}`;
+    const newDoc = {
+      name:
+        name ||
+        path.basename(
+          req.file.originalname,
+          path.extname(req.file.originalname)
+        ),
+      url: fileUrl,
+      filePath: req.file.path,
+      uploadedAt: new Date(),
+    };
+
+    user.documents.push(newDoc);
+    await user.save();
+
+    res.status(201).json(user.documents[user.documents.length - 1]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+app.post(
+  "/api/documents/upload",
+  authenticateToken,
+  requireFundraiser,
+  upload.single("document"),
+  multerErrorHandler,
+  uploadHandler
+);
+app.post(
+  "/api/documents",
+  authenticateToken,
+  requireFundraiser,
+  upload.single("document"),
+  multerErrorHandler,
+  uploadHandler
+);
+
+app.get("/api/documents/:userId?", authenticateToken, async (req, res) => {
+  try {
+    const userIdParam = req.params.userId;
+    const userId = userIdParam || req.user.id;
+
+    if (req.user.role !== "admin" && userId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to view these documents" });
+    }
+
+    const user = await User.findById(userId).select("documents");
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(
+      1,
+      parseInt(req.query.limit, 10) || user.documents.length || 10
+    );
+    const totalDocs = user.documents.length;
+    const totalPages = Math.max(1, Math.ceil(totalDocs / limit));
+    const start = (page - 1) * limit;
+
+    const docsPage = user.documents
+      .slice()
+      .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))
+      .slice(start, start + limit);
+
+    res.json({
+      docs: docsPage,
+      totalDocs,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/api/documents/:docId", authenticateToken, async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: "Document name is required" });
+    }
+
+    const user = await User.findOne({ "documents._id": req.params.docId });
+    if (!user) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    if (req.user.role !== "admin" && user._id.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to update this document" });
+    }
+
+    const doc = user.documents.id(req.params.docId);
+    if (!doc) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    doc.name = name;
+    await user.save();
+
+    res.json(doc);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/documents/:docId", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ "documents._id": req.params.docId });
+    if (!user) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    if (req.user.role !== "admin" && user._id.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to delete this document" });
+    }
+
+    const doc = user.documents.id(req.params.docId);
+    if (!doc) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    if (doc.filePath && fs.existsSync(doc.filePath)) {
+      try {
+        fs.unlinkSync(doc.filePath);
+      } catch (fsErr) {
+        console.warn("File delete warning:", fsErr);
+      }
+    }
+
+    doc.remove();
+    await user.save();
+
+    res.json({ message: "Document deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get(
+  "/api/documents/download/:docId",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const user = await User.findOne({ "documents._id": req.params.docId });
+      if (!user) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      const doc = user.documents.id(req.params.docId);
+      if (!doc) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      if (req.user.role !== "admin" && user._id.toString() !== req.user.id) {
+        return res
+          .status(403)
+          .json({ error: "Not authorized to access this document" });
+      }
+
+      if (!doc.filePath || !fs.existsSync(doc.filePath)) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      const fileNameWithExt = doc.name + path.extname(doc.filePath);
+      res.download(path.resolve(doc.filePath), fileNameWithExt, (err) => {
+        if (err) {
+          console.error("Download send error:", err);
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Production static serve
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../client/build")));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(__dirname, "../client/build", "index.html"));
+  });
+}
+
+// Global error handler
+app.use((err, _req, res, _next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: err.message || "Server error" });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
