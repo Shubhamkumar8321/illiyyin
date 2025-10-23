@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import ProgressBar from "./ProgressBar";
 import { Campaign } from "@/types/campaign";
 
+// ✅ Comment interface — explicitly typed
 interface Comment {
   _id: string;
   user: string;
@@ -12,9 +13,11 @@ interface Comment {
 }
 
 const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
+  // ✅ Explicitly typed state to avoid "never[]" issues
+  const [comments, setComments] = useState<Comment[]>(() => []);
+  const [loading, setLoading] = useState<boolean>(true);
 
+  // ✅ Fetch comments safely
   useEffect(() => {
     if (!campaign?._id) return;
 
@@ -26,7 +29,7 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
         const data = await res.json();
 
         if (data.success && Array.isArray(data.data)) {
-          setComments(data.data);
+          setComments(data.data as Comment[]);
         }
       } catch (error) {
         console.error("Error fetching comments:", error);
@@ -38,22 +41,23 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
     fetchComments();
   }, [campaign?._id]);
 
-  // ✅ Function to sanitize and safely render content
+  // ✅ Function to sanitize and safely render HTML content
   const renderFormattedContent = (htmlContent?: string) => {
     if (!htmlContent) return <p>No description available.</p>;
 
-    // Remove potentially harmful tags (like <script>)
+    // Remove <script> tags for safety
     const sanitized = htmlContent.replace(
       /<script[^>]*>([\s\S]*?)<\/script>/gi,
       ""
     );
 
-    // Split content into images and text blocks in correct order
+    // Create temporary element for parsing HTML safely
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = sanitized;
 
     const elements = Array.from(tempDiv.childNodes);
 
+    // ✅ Return array of JSX elements preserving order
     return elements.map((el, index) => {
       if (el.nodeName === "IMG") {
         const imgEl = el as HTMLImageElement;
@@ -88,12 +92,21 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
     });
   };
 
+  // ✅ Safely handle unknown organizer types
+  const getOrganizerName = (): string => {
+    const org = (campaign as any).organizer;
+    if (!org) return "Unknown";
+    if (typeof org === "string") return org;
+    if (typeof org === "object" && "name" in org) return org.name || "Unknown";
+    return "Unknown";
+  };
+
   return (
     <div className="space-y-6">
       {/* 🟢 Title */}
       <h1 className="text-2xl md:text-3xl font-bold">{campaign.title}</h1>
 
-      {/* 🖼️ + 📝 Description (mixed in original order) */}
+      {/* 🖼️ + 📝 Description (preserve image/text order) */}
       <div className="flex flex-col gap-3">
         {renderFormattedContent(campaign.description)}
       </div>
@@ -121,11 +134,8 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
         <div className="bg-indigo-50 p-4 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-2">About Us</h2>
           <p className="text-gray-700 text-sm">
-            We are{" "}
-            <span className="font-semibold">
-              {campaign.organizer ?? "Unknown"}
-            </span>
-            , committed to helping orphans, widows, and needy people around the
+            We are <span className="font-semibold">{getOrganizerName()}</span>,
+            committed to helping orphans, widows, and needy people around the
             world.
           </p>
         </div>
@@ -133,7 +143,7 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
         <div className="bg-gray-50 p-4 rounded-lg shadow space-y-2">
           <p className="text-sm text-gray-500">
             <span className="font-semibold">Organizer:</span>{" "}
-            {campaign.organizer ?? "Unknown"}
+            {getOrganizerName()}
           </p>
           {campaign.raised !== undefined && campaign.goal !== undefined && (
             <p className="text-sm text-gray-500">
@@ -153,7 +163,7 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
           <p className="text-gray-500 text-center py-4">Loading comments...</p>
         ) : comments.length > 0 ? (
           <div className="flex flex-wrap gap-4">
-            {comments.map((c) => (
+            {comments.map((c: Comment) => (
               <div
                 key={c._id}
                 className="w-[250px] h-44 p-5 bg-white rounded-2xl shadow-lg border border-gray-200"
