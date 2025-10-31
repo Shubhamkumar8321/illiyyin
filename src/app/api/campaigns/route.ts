@@ -1,71 +1,3 @@
-// import { NextResponse } from "next/server";
-// import { connectDB } from "@/lib/mongodb";
-// import Campaign from "@/models/Campaign";
-
-// export async function POST(req: Request) {
-//   try {
-//     console.log("➡️ Creating new campaign...");
-//     await connectDB();
-
-//     const body = await req.json();
-//     console.log("🟢 Incoming body:", body);
-
-//     const { title, description, category, goal, endDate, organizer } = body;
-
-//     // 🧩 Validate fields
-//     if (!title || !description || !category || !goal || !endDate) {
-//       return NextResponse.json(
-//         { success: false, message: "All fields are required." },
-//         { status: 400 }
-//       );
-//     }
-
-//     // 🧠 Extract <img> URLs from TinyMCE HTML
-//     const imageRegex = /<img[^>]+src="([^">]+)"/g;
-//     const images: string[] = [];
-//     let match;
-//     while ((match = imageRegex.exec(description)) !== null) {
-//       images.push(match[1]);
-//     }
-
-//     // ✅ Create campaign
-//     const newCampaign = await Campaign.create({
-//       title,
-//       description: description.trim(),
-//       category,
-//       goal: Number(goal),
-//       endDate: new Date(endDate),
-//       images: images.length > 0 ? images : ["/placeholder.jpg"],
-//       raised: 0,
-//       status: "pending",
-//       organizer: organizer || "Anonymous",
-//     });
-
-//     console.log("✅ Campaign created successfully:", newCampaign._id);
-//     return NextResponse.json({ success: true, data: newCampaign }, { status: 201 });
-//   } catch (error: any) {
-//     console.error("❌ Error creating campaign:", error);
-//     return NextResponse.json(
-//       { success: false, message: error.message || "Internal Server Error" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-// // 🟢 Fetch all campaigns
-// export async function GET() {
-//   try {
-//     await connectDB();
-//     const campaigns = await Campaign.find().sort({ createdAt: -1 });
-//     return NextResponse.json({ success: true, data: campaigns }, { status: 200 });
-//   } catch (error: any) {
-//     console.error("❌ Error fetching campaigns:", error);
-//     return NextResponse.json(
-//       { success: false, message: error.message },
-//       { status: 500 }
-//     );
-//   }
-// }
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Campaign from "@/models/Campaign";
@@ -91,7 +23,7 @@ export async function POST(req: Request) {
 
     // 🧩 Find the user from DB by email or id
     const user =
-      (createdById && await User.findById(createdById)) ||
+      (createdById && (await User.findById(createdById))) ||
       (await User.findOne({ email: createdByEmail }));
 
     if (!user) {
@@ -104,7 +36,8 @@ export async function POST(req: Request) {
     // 🧠 Extract <img> URLs from TinyMCE HTML
     const imageRegex = /<img[^>]+src="([^">]+)"/g;
     const images: string[] = [];
-    let match;
+    let match: RegExpExecArray | null;
+
     while ((match = imageRegex.exec(description)) !== null) {
       images.push(match[1]);
     }
@@ -120,7 +53,6 @@ export async function POST(req: Request) {
       raised: 0,
       status: "pending",
 
-      // 👇 Organizer info auto-filled
       organizer: {
         name: user.name,
         email: user.email,
@@ -133,10 +65,14 @@ export async function POST(req: Request) {
     console.log("✅ Campaign created successfully:", newCampaign._id);
 
     return NextResponse.json({ success: true, data: newCampaign }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Error creating campaign:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
+
     return NextResponse.json(
-      { success: false, message: error.message || "Internal Server Error" },
+      { success: false, message },
       { status: 500 }
     );
   }
@@ -148,10 +84,14 @@ export async function GET() {
     await connectDB();
     const campaigns = await Campaign.find().sort({ createdAt: -1 });
     return NextResponse.json({ success: true, data: campaigns }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Error fetching campaigns:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Server Error";
+
     return NextResponse.json(
-      { success: false, message: error.message },
+      { success: false, message },
       { status: 500 }
     );
   }

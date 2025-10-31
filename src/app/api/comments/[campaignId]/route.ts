@@ -5,15 +5,13 @@ import mongoose from "mongoose";
 
 export async function GET(
   req: Request,
-  context: { params: Promise<{ campaignId: string }> } // ✅ promise type
+  context: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     await connectDB();
 
-    // ✅ Await params before destructuring
     const { campaignId } = await context.params;
 
-    // ✅ Validate campaignId
     if (!mongoose.Types.ObjectId.isValid(campaignId)) {
       console.error("❌ Invalid campaignId:", campaignId);
       return NextResponse.json(
@@ -24,7 +22,6 @@ export async function GET(
 
     const campaignObjectId = new mongoose.Types.ObjectId(campaignId);
 
-    // ✅ Fetch comments
     const comments = await Comment.find({ campaignId: campaignObjectId })
       .sort({ createdAt: -1 })
       .lean();
@@ -32,10 +29,14 @@ export async function GET(
     console.log("✅ Found comments:", comments.length);
 
     return NextResponse.json({ success: true, data: comments });
-  } catch (error: any) {
-    console.error("🚨 Error fetching comments:", error);
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to load comments";
+
+    console.error("🚨 Error fetching comments:", message);
+
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to load comments" },
+      { success: false, message },
       { status: 500 }
     );
   }

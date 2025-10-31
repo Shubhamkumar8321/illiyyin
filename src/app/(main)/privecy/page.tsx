@@ -126,14 +126,14 @@ export default function PrivacyPage() {
           8. Changes to This Policy
         </h2>
         <p className="mb-4 text-gray-700">
-          Illiyyin may update this Privacy Policy from time to time. Any changes
-          will be reflected on this page with an updated effective date.
+          Illiyyin may update this Privacy Policy from time to time. unknown
+          changes will be reflected on this page with an updated effective date.
         </p>
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">9. Contact Us</h2>
         <p className="text-gray-700">
-          If you have any questions about this Privacy Policy or how we handle
-          your data, please contact us at{" "}
+          If you have unknown questions about this Privacy Policy or how we
+          handle your data, please contact us at{" "}
           <a
             href="mailto:support@illiyyin.org"
             className="text-green-600 font-medium"

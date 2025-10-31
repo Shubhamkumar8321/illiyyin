@@ -43,7 +43,7 @@ export default function CampaignDetail() {
         }
 
         setCampaign(result.data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(err.message || "Something went wrong");
       } finally {
         setLoading(false);
@@ -70,7 +70,7 @@ export default function CampaignDetail() {
       </div>
     );
 
-  // ✅ Extract and normalize all image URLs from any format
+  // ✅ Extract and normalize all image URLs from unknown format
   const extractImageUrls = (data: Campaign): string[] => {
     const urls: string[] = [];
 

@@ -13,7 +13,7 @@ export async function GET(
       .lean();
 
     return NextResponse.json({ success: true, data: donations });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error fetching donations:", err);
     return NextResponse.json(
       { success: false, message: "Error loading donations" },

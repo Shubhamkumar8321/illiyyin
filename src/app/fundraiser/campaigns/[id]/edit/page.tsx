@@ -87,7 +87,7 @@ export default function FundEditPage() {
           fetched.content || fetched.description || ""
         );
         setDraft({ ...fetched, content: html });
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(err.message || "Something went wrong");
       } finally {
         setLoading(false);
@@ -118,7 +118,7 @@ export default function FundEditPage() {
       if (!res.ok) throw new Error(data.message || "Failed to update campaign");
 
       router.push(`/fundraiser/campaigns/${id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || "Something went wrong");
     } finally {
       setSaving(false);
@@ -200,7 +200,7 @@ export default function FundEditPage() {
                   const input = document.createElement("input");
                   input.type = "file";
                   input.accept = "image/*";
-                  input.onchange = async (e: any) => {
+                  input.onchange = async (e: unknown) => {
                     const file = e.target.files[0];
                     const formData = new FormData();
                     formData.append("file", file);

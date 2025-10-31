@@ -13,7 +13,7 @@ export interface Campaign {
     email: string;
   };
   isFeatured?: boolean;
-  wordpressData?: any;
+  wordpressData?: unknown;
 }
 
 export interface User {

@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const imageUrl = `/uploads/${fileName}`;
 
     return NextResponse.json({ location: imageUrl });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

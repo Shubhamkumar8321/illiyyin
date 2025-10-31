@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     console.log("✅ Comment saved:", newComment);
 
     return NextResponse.json({ success: true, data: newComment });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("🚨 Error saving comment:", error);
     return NextResponse.json(
       { success: false, message: error.message || "Failed to save comment" },

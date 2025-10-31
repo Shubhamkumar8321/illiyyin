@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         organization: user.organization || "",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Error fetching user:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },

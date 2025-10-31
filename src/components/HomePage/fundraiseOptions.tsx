@@ -34,7 +34,7 @@ const FundraiseOptions: React.FC = () => {
     <section className="w-full flex justify-center px-4 sm:px-6 lg:px-8 py-12 bg-gray-50">
       <div className="w-full max-w-7xl bg-white rounded-3xl shadow-sm px-6 sm:px-10 py-12">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-10 text-left">
-          Fundraise for anyone
+          Fundraise for unknownone
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

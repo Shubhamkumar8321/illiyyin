@@ -201,9 +201,9 @@
 // }
 
 // /* ----------------------------- STEP 1 ----------------------------- */
-// function Step1({ formData, setFormData, errors }: any) {
+// function Step1({ formData, setFormData, errors }: unknown) {
 //   const update = (k: string, v: string) =>
-//     setFormData((p: any) => ({ ...p, [k]: v }));
+//     setFormData((p: unknown) => ({ ...p, [k]: v }));
 
 //   return (
 //     <div>
@@ -283,9 +283,9 @@
 // }
 
 // /* ----------------------------- STEP 2 ----------------------------- */
-// function Step2({ formData, setFormData, errors }: any) {
+// function Step2({ formData, setFormData, errors }: unknown) {
 //   const update = (k: string, v: string) =>
-//     setFormData((p: any) => ({ ...p, [k]: v }));
+//     setFormData((p: unknown) => ({ ...p, [k]: v }));
 
 //   const options = [
 //     { label: "Yourself", desc: "Funds go directly to your account" },
@@ -338,9 +338,9 @@
 // }
 
 // /* ----------------------------- STEP 3 ----------------------------- */
-// function Step3({ formData, setFormData, errors }: any) {
+// function Step3({ formData, setFormData, errors }: unknown) {
 //   const update = (k: string, v: string) =>
-//     setFormData((p: any) => ({ ...p, [k]: v }));
+//     setFormData((p: unknown) => ({ ...p, [k]: v }));
 
 //   return (
 //     <div>

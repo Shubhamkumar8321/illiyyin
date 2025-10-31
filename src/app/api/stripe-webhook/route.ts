@@ -15,7 +15,7 @@
 //   let event;
 //   try {
 //     event = stripe.webhooks.constructEvent(raw, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
-//   } catch (err: any) {
+//   } catch (err: unknown) {
 //     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
 //   }
 //  console.log("done",event);
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       sig!,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.log("❌ Signature Error:", err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }

@@ -7,7 +7,7 @@ export async function GET() {
     await connectDB();
     const files = await Document.find({});
     return new Response(JSON.stringify({ success: true, files }), { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return new Response(JSON.stringify({ success: false, message: err.message }), { status: 500 });
   }
 }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     return new Response(JSON.stringify({ success: true, files: savedFiles }), { status: 201 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return new Response(JSON.stringify({ success: false, message: err.message }), { status: 500 });
   }
 }

@@ -68,7 +68,7 @@ export default function FundDashboard() {
 
         // Set first 4 visible
         setVisibleCampaigns(approved.slice(0, campaignsPerPage));
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
         setError(err?.message || "An error occurred");
       } finally {

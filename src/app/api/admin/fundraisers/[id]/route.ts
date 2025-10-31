@@ -66,12 +66,18 @@ export async function GET(
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Error fetching fundraiser details:", error);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to fetch fundraiser details";
+
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to fetch fundraiser details",
+        message,
       },
       { status: 500 }
     );

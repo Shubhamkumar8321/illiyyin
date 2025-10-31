@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json({ success: true, fileName: `${slug}.json` });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Save post error:", err);
     return NextResponse.json({ error: "Failed to save post" }, { status: 500 });
   }

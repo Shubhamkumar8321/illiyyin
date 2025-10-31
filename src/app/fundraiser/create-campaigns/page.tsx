@@ -118,7 +118,7 @@ export default function CreateCampaign() {
 
       // 🧹 Optional: clear fundraising data after campaign creation
       localStorage.removeItem("fundraisingData");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("❌ Campaign creation error:", err);
       setError(err.message || "Something went wrong");
     } finally {

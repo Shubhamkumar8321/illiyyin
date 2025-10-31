@@ -15,7 +15,6 @@ export async function GET(req: Request, context: Params) {
     await connectDB();
     const { id } = await context.params;
 
-    // Validate ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return new Response(
         JSON.stringify({ success: false, message: "Invalid campaign ID" }),
@@ -32,15 +31,17 @@ export async function GET(req: Request, context: Params) {
       );
     }
 
-    // ✅ Return all details (including supporters, donations)
     return new Response(
       JSON.stringify({ success: true, data: campaign }),
       { status: 200 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Error in GET /api/campaigns/[id]:", err);
+    
+    const message = err instanceof Error ? err.message : "Failed to fetch campaign";
+
     return new Response(
-      JSON.stringify({ success: false, message: err.message }),
+      JSON.stringify({ success: false, message }),
       { status: 500 }
     );
   }
@@ -53,7 +54,7 @@ export async function PATCH(req: Request, context: Params) {
   try {
     await connectDB();
     const { id } = await context.params;
-    const body = await req.json();
+    const body: Record<string, unknown> = await req.json();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return new Response(
@@ -62,17 +63,16 @@ export async function PATCH(req: Request, context: Params) {
       );
     }
 
-    // 🧠 Extract images from description HTML
-    let images: string[] = [];
-    if (body.description && typeof body.description === "string") {
+    // ✅ Extract images safely
+    const images: string[] = [];
+    if (typeof body.description === "string") {
       const imageRegex = /<img[^>]+src="([^">]+)"/g;
-      let match;
+      let match: RegExpExecArray | null;
       while ((match = imageRegex.exec(body.description)) !== null) {
         images.push(match[1]);
       }
     }
 
-    // ✅ Perform update
     const updatedCampaign = await Campaign.findByIdAndUpdate(
       id,
       {
@@ -81,7 +81,7 @@ export async function PATCH(req: Request, context: Params) {
         category: body.category,
         goal: body.goal,
         endDate: body.endDate,
-        images: images.length > 0 ? images : body.images || [],
+        images: images.length > 0 ? images : (body.images as string[]) ?? [],
         isFeatured: body.isFeatured,
       },
       { new: true }
@@ -98,25 +98,34 @@ export async function PATCH(req: Request, context: Params) {
       JSON.stringify({ success: true, data: updatedCampaign }),
       { status: 200 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Error in PATCH /api/campaigns/[id]:", err);
+
+    const message = err instanceof Error ? err.message : "Failed to update campaign";
+
     return new Response(
-      JSON.stringify({ success: false, message: err.message }),
+      JSON.stringify({ success: false, message }),
       { status: 500 }
     );
   }
 }
 
 // ====================
-// POST — Add a Supporter (Optional, for testing)
+// POST — Add a Supporter
 // ====================
 export async function POST(req: Request, context: Params) {
   try {
     await connectDB();
     const { id } = await context.params;
-    const { name, email, amount, avatar, message } = await req.json();
+    
+    const { name, email, amount, avatar, message } = await req.json() as {
+      name: string;
+      email?: string;
+      amount: number;
+      avatar?: string;
+      message?: string;
+    };
 
-    // Validate
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return new Response(
         JSON.stringify({ success: false, message: "Invalid campaign ID" }),
@@ -164,10 +173,13 @@ export async function POST(req: Request, context: Params) {
       }),
       { status: 201 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Error in POST /api/campaigns/[id]:", err);
+
+    const message = err instanceof Error ? err.message : "Failed to add supporter";
+
     return new Response(
-      JSON.stringify({ success: false, message: err.message }),
+      JSON.stringify({ success: false, message }),
       { status: 500 }
     );
   }

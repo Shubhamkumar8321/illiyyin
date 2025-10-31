@@ -29,8 +29,8 @@ export default function TermsPage() {
         <p className="mb-6 text-gray-700">
           Welcome to <strong>Illiyyin</strong>. By accessing or using our
           platform, you agree to comply with and be bound by the following terms
-          and conditions. Please read them carefully before making any donations
-          or using our services.
+          and conditions. Please read them carefully before making unknown
+          donations or using our services.
         </p>
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">1. Use of Platform</h2>
@@ -93,13 +93,13 @@ export default function TermsPage() {
           7. Changes to Terms
         </h2>
         <p className="mb-4 text-gray-700">
-          Illiyyin may modify these Terms & Conditions at any time. Continued
-          use of the platform indicates acceptance of updated terms.
+          Illiyyin may modify these Terms & Conditions at unknown time.
+          Continued use of the platform indicates acceptance of updated terms.
         </p>
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">8. Contact Us</h2>
         <p className="text-gray-700">
-          For any questions or legal concerns regarding these Terms &
+          For unknown questions or legal concerns regarding these Terms &
           Conditions, please contact us at{" "}
           <a
             href="mailto:support@illiyyin.org"

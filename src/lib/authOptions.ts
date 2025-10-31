@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
         });
       }
 
-      (user as any).role = existingUser.role;
+      (user as unknown).role = existingUser.role;
       return true;
     },
 
@@ -40,7 +40,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       await connectDB();
       if (user) {
-        token.role = (user as any).role;
+        token.role = (user as unknown).role;
       } else {
         const dbUser = await User.findOne({ email: token.email });
         token.role = dbUser?.role || "user";
@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
     // ✅ Add role to session
     async session({ session, token }) {
       if (token?.role) {
-        (session.user as any).role = token.role;
+        (session.user as unknown).role = token.role;
       }
       return session;
     },
