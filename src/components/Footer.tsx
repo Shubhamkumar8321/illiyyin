@@ -22,17 +22,17 @@ const Footer: React.FC = () => {
           <h3 className="text-white font-semibold text-lg mb-3">Quick Links</h3>
           <ul className="space-y-2">
             <li>
-              <a href="#" className="hover:text-[#094C3B]-400 transition">
+              <a href="about" className="hover:text-[#094C3B]-400 transition">
                 About Us
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-[#094C3B]-400 transition">
+              <a href="privecy" className="hover:text-[#094C3B]-400 transition">
                 Privacy Policy
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-[#094C3B]-400 transition">
+              <a href="terms" className="hover:text-[#094C3B]-400 transition">
                 Terms & Conditions
               </a>
             </li>
