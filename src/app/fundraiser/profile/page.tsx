@@ -41,7 +41,11 @@ export default function FundProfile() {
         setProfile(data.data);
       } catch (err: unknown) {
         console.error("❌ Profile fetch error:", err);
-        setError(err.message || "Something went wrong");
+
+        const message =
+          err instanceof Error ? err.message : "Something went wrong";
+
+        setError(message);
       } finally {
         setLoading(false);
       }

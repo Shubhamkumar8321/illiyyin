@@ -1,27 +1,38 @@
-import mongoose from "mongoose";
+import mongoose, { Mongoose } from "mongoose";
 
-const MONGO_URI = process.env.MONGO_URI as string;
+const MONGODB_URI = process.env.MONGO_URI as string;
 
-if (!MONGO_URI) {
-  throw new Error("❌ Please define MONGODB_URI in .env.local");
+if (!MONGODB_URI) {
+  throw new Error("❌ Please define MONGODB_URI in your .env.local file");
 }
 
-let cached = (global as unknown).mongoose;
-
-if (!cached) {
-  cached = (global as unknown).mongoose = { conn: null, promise: null };
+// ✅ Define global cache type
+interface MongooseCache {
+  conn: Mongoose | null;
+  promise: Promise<Mongoose> | null;
 }
 
-export async function connectDB() {
-  if (cached.conn) return cached.conn;
+// ✅ Attach cache on global object (Next.js hot reload safe)
+const globalWithMongoose = global as typeof globalThis & {
+  mongoose?: MongooseCache;
+};
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGO_URI).then((mongoose) => {
+if (!globalWithMongoose.mongoose) {
+  globalWithMongoose.mongoose = { conn: null, promise: null };
+}
+
+export async function connectDB(): Promise<Mongoose> {
+  const cache = globalWithMongoose.mongoose!;
+
+  if (cache.conn) return cache.conn;
+
+  if (!cache.promise) {
+    cache.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
       console.log("✅ MongoDB Connected");
       return mongoose;
     });
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  cache.conn = await cache.promise;
+  return cache.conn;
 }

@@ -3,7 +3,6 @@
 import React, { useState, useRef, FC, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay, Pagination } from "swiper/modules";
-import type { NavigationOptions } from "swiper/types";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -34,7 +33,7 @@ const RecentCampaigns: FC = () => {
   const nextRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
-  // ✅ Fetch campaigns with status "approved"
+  // ✅ Fetch campaigns
   useEffect(() => {
     const fetchApprovedCampaigns = async () => {
       try {
@@ -42,8 +41,6 @@ const RecentCampaigns: FC = () => {
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
           setCampaigns(data.data);
-        } else {
-          console.error("Failed to fetch campaigns");
         }
       } catch (error) {
         console.error("Error fetching campaigns:", error);
@@ -57,39 +54,28 @@ const RecentCampaigns: FC = () => {
     setOpenShare(true);
   };
 
-  // ✅ Clean universal image extractor (no placeholder)
+  // ✅ Extract first valid image
   const extractImageUrl = (img?: string | string[]): string | null => {
     if (!img) return null;
 
     const validExt = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)$/i;
 
     const extract = (val: string): string | null => {
-      if (!val) return null;
-
-      // Extract <img src="...">
       const htmlMatch = val.match(/src=["']([^"']+)["']/i);
       if (htmlMatch) return htmlMatch[1];
-
-      // Base64 image
       if (val.startsWith("data:image")) return val;
-
-      // Remote URL
       if (val.startsWith("http")) return val;
-
-      // Local file path
-      if (validExt.test(val)) {
+      if (validExt.test(val))
         return val.startsWith("/")
           ? val
           : "/" + val.replace(/^(\.\.\/|\.\/)/, "");
-      }
-
       return null;
     };
 
     if (Array.isArray(img)) {
       for (const item of img) {
-        const src = extract(item);
-        if (src) return src;
+        const url = extract(item);
+        if (url) return url;
       }
       return null;
     }
@@ -115,20 +101,13 @@ const RecentCampaigns: FC = () => {
         <div className="relative">
           <Swiper
             modules={[Navigation, Autoplay, Pagination]}
-            navigation={
-              {
-                prevEl: prevRef.current,
-                nextEl: nextRef.current,
-              } as NavigationOptions
-            }
+            navigation={true}
             onBeforeInit={(swiper) => {
-              if (
-                swiper.params.navigation &&
-                typeof swiper.params.navigation !== "boolean"
-              ) {
-                swiper.params.navigation.prevEl = prevRef.current;
-                swiper.params.navigation.nextEl = nextRef.current;
-              }
+              // ✅ Attach refs safely
+              // @ts-ignore
+              swiper.params.navigation.prevEl = prevRef.current;
+              // @ts-ignore
+              swiper.params.navigation.nextEl = nextRef.current;
             }}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
             loop
@@ -153,7 +132,6 @@ const RecentCampaigns: FC = () => {
               return (
                 <SwiperSlide key={campaign._id}>
                   <div className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col h-[330px] hover:shadow-xl hover:-translate-y-1 transition border border-gray-100">
-                    {/* ✅ Show image only if it exists */}
                     {imageUrl && (
                       <div
                         onClick={() =>
@@ -170,7 +148,6 @@ const RecentCampaigns: FC = () => {
                       </div>
                     )}
 
-                    {/* Content */}
                     <div className="p-4 flex-1 flex flex-col justify-between">
                       <div className="flex-1">
                         <h3
@@ -186,7 +163,6 @@ const RecentCampaigns: FC = () => {
                         </p>
                       </div>
 
-                      {/* Buttons */}
                       <div className="flex gap-2 mt-4">
                         <button
                           onClick={() =>
@@ -215,7 +191,7 @@ const RecentCampaigns: FC = () => {
             })}
           </Swiper>
 
-          {/* Navigation Arrows */}
+          {/* ✅ Navigation Arrows */}
           <button
             ref={prevRef}
             className="absolute top-1/2 -left-12 bg-white shadow w-10 h-10 rounded-full items-center justify-center hover:bg-blue-600 hover:text-white transition hidden md:flex"
@@ -231,30 +207,11 @@ const RecentCampaigns: FC = () => {
         </div>
       </div>
 
-      {/* Share Popup */}
       <SharePopup
         open={openShare}
         onClose={() => setOpenShare(false)}
         campaign={selectedCampaign ?? undefined}
       />
-
-      <style>
-        {`
-          .swiper-pagination {
-            position: static !important;
-            margin-top: 1rem;
-            text-align: center;
-          }
-          .swiper-pagination-bullet {
-            background: #d1d5db;
-            opacity: 1;
-          }
-          .swiper-pagination-bullet-active {
-            background: #2563eb;
-            transform: scale(1.2);
-          }
-        `}
-      </style>
     </section>
   );
 };

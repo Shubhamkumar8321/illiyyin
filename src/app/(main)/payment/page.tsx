@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { CreditCard, Smartphone } from "lucide-react";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
-import { useSearchParams } from "next/navigation"; // ✅ added
+import { useSearchParams } from "next/navigation";
 
-// ✅ initialize Stripe once (safe for SSR)
+// ✅ Initialize Stripe only once (safe for SSR)
 let stripePromise: Promise<Stripe | null>;
 if (typeof window !== "undefined") {
   stripePromise = loadStripe(
@@ -15,8 +15,8 @@ if (typeof window !== "undefined") {
   stripePromise = Promise.resolve(null);
 }
 
-export default function DonationPage() {
-  // ✅ Read URL params
+// ✅ Separated inner component wrapped by <Suspense>
+function PaymentPageContent() {
   const searchParams = useSearchParams();
 
   // --------------------- STATES ---------------------
@@ -31,8 +31,7 @@ export default function DonationPage() {
   const [frequency, setFrequency] = useState("one-time");
   const [currency, setCurrency] = useState("USD");
   const [loading, setLoading] = useState(false);
-
-  const [campaignId, setCampaignId] = useState<string | null>(null); // ✅ added
+  const [campaignId, setCampaignId] = useState<string | null>(null);
 
   // ✅ Get donation amount + campaignId from URL
   useEffect(() => {
@@ -47,10 +46,9 @@ export default function DonationPage() {
     if (camp) setCampaignId(camp);
   }, [searchParams]);
 
-  // --------------------- SUCCESS / CANCEL ALERTS ---------------------
+  // ✅ Success / Cancel alerts
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const params = new URLSearchParams(window.location.search);
     const status = params.get("status");
 
@@ -60,12 +58,10 @@ export default function DonationPage() {
       alert("❌ Payment cancelled. You can try again.");
     }
 
-    if (status) {
-      window.history.replaceState({}, "", window.location.pathname);
-    }
+    if (status) window.history.replaceState({}, "", window.location.pathname);
   }, []);
 
-  // --------------------- STATIC DATA ---------------------
+  // --------------------- DATA ---------------------
   const givingLevels = [
     {
       amount: 3,
@@ -127,7 +123,6 @@ export default function DonationPage() {
     }
   }, [customAmount, selectedAmount, tipType]);
 
-  // --------------------- TOTAL ---------------------
   const total = (
     (customAmount === "" ? selectedAmount : customAmount) + tip
   ).toFixed(2);
@@ -144,8 +139,6 @@ export default function DonationPage() {
           currency,
           frequency,
           comment,
-
-          // ✅ IMPORTANT FIELDS SENT TO BACKEND
           actualDonation: customAmount === "" ? selectedAmount : customAmount,
           tip,
           isZakat,
@@ -157,7 +150,6 @@ export default function DonationPage() {
       const data = await response.json();
       if (!response.ok || !data.url) {
         alert(`❌ ${data.error || "Failed to create checkout session."}`);
-        setLoading(false);
         return;
       }
       window.location.href = data.url;
@@ -169,7 +161,6 @@ export default function DonationPage() {
     }
   };
 
-  // --------------------- CURRENCY SYMBOL ---------------------
   const getSymbol = (currency: string) => {
     switch (currency) {
       case "USD":
@@ -198,26 +189,17 @@ export default function DonationPage() {
 
         {/* Frequency */}
         <div className="flex bg-gray-100 rounded-full mb-6 overflow-hidden">
-          <button
-            onClick={() => setFrequency("one-time")}
-            className={`flex-1 py-2 font-medium rounded-full ${
-              frequency === "one-time"
-                ? "bg-[#2B8C73] text-white"
-                : "text-gray-600"
-            }`}
-          >
-            One-time
-          </button>
-          <button
-            onClick={() => setFrequency("recurring")}
-            className={`flex-1 py-2 font-medium rounded-full ${
-              frequency === "recurring"
-                ? "bg-[#2B8C73] text-white"
-                : "text-gray-600"
-            }`}
-          >
-            Recurring
-          </button>
+          {["one-time", "recurring"].map((type) => (
+            <button
+              key={type}
+              onClick={() => setFrequency(type)}
+              className={`flex-1 py-2 font-medium rounded-full ${
+                frequency === type ? "bg-[#2B8C73] text-white" : "text-gray-600"
+              }`}
+            >
+              {type === "one-time" ? "One-time" : "Recurring"}
+            </button>
+          ))}
         </div>
 
         {/* Currency */}
@@ -385,7 +367,7 @@ export default function DonationPage() {
       <div className="lg:w-2/5">
         <div className="lg:sticky lg:top-24 bg-gray-50 p-6 rounded-lg shadow-sm h-fit">
           <h3 className="font-semibold text-lg flex items-center gap-2">
-            Zakat-verified campaign{" "}
+            Zakat-verified campaign
           </h3>
           <label className="flex items-center gap-2 mt-3 cursor-pointer">
             <input
@@ -418,5 +400,16 @@ export default function DonationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ✅ Wrap in Suspense (Fixes build error)
+export default function PaymentPage() {
+  return (
+    <Suspense
+      fallback={<div className="p-6 text-center">Loading payment...</div>}
+    >
+      <PaymentPageContent />
+    </Suspense>
   );
 }

@@ -70,7 +70,10 @@ export default function FundDashboard() {
         setVisibleCampaigns(approved.slice(0, campaignsPerPage));
       } catch (err: unknown) {
         console.error(err);
-        setError(err?.message || "An error occurred");
+
+        const message =
+          err instanceof Error ? err.message : "An error occurred";
+        setError(message);
       } finally {
         setLoading(false);
       }

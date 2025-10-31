@@ -1,41 +1,75 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Document from "@/models/Document";
 
-interface Params {
-  params: { id: string };
+// ✅ Next.js 15 dynamic params type
+interface ParamsPromise {
+  params: Promise<{ id: string }>;
 }
 
-export async function GET(req: NextRequest, { params }: Params) {
+// ✅ GET — Get one file
+export async function GET(req: NextRequest, context: ParamsPromise) {
   try {
+    const { id } = await context.params; // ✅ FIX
     await connectDB();
-    const doc = await Document.findById(params.id);
-    if (!doc) return new Response(JSON.stringify({ success: false, message: "File not found" }), { status: 404 });
-    return new Response(JSON.stringify({ success: true, file: doc }), { status: 200 });
+
+    const doc = await Document.findById(id);
+    if (!doc)
+      return NextResponse.json(
+        { success: false, message: "File not found" },
+        { status: 404 }
+      );
+
+    return NextResponse.json({ success: true, file: doc });
   } catch (err: unknown) {
-    return new Response(JSON.stringify({ success: false, message: err.message }), { status: 500 });
+    const message = err instanceof Error ? err.message : "Error";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: Params) {
+// ✅ PATCH — Rename file
+export async function PATCH(req: NextRequest, context: ParamsPromise) {
   try {
+    const { id } = await context.params; // ✅ FIX
     await connectDB();
+
     const body = await req.json();
-    const updatedDoc = await Document.findByIdAndUpdate(params.id, { name: body.name }, { new: true });
-    if (!updatedDoc) return new Response(JSON.stringify({ success: false, message: "File not found" }), { status: 404 });
-    return new Response(JSON.stringify({ success: true, file: updatedDoc }), { status: 200 });
+    const updatedDoc = await Document.findByIdAndUpdate(
+      id,
+      { name: body.name },
+      { new: true }
+    );
+
+    if (!updatedDoc)
+      return NextResponse.json(
+        { success: false, message: "File not found" },
+        { status: 404 }
+      );
+
+    return NextResponse.json({ success: true, file: updatedDoc });
   } catch (err: unknown) {
-    return new Response(JSON.stringify({ success: false, message: err.message }), { status: 500 });
+    const message = err instanceof Error ? err.message : "Error";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: Params) {
+// ✅ DELETE — Delete file
+export async function DELETE(req: NextRequest, context: ParamsPromise) {
   try {
+    const { id } = await context.params; // ✅ FIX
     await connectDB();
-    const deletedDoc = await Document.findByIdAndDelete(params.id);
-    if (!deletedDoc) return new Response(JSON.stringify({ success: false, message: "File not found" }), { status: 404 });
-    return new Response(JSON.stringify({ success: true, file: deletedDoc }), { status: 200 });
+
+    const deletedDoc = await Document.findByIdAndDelete(id);
+
+    if (!deletedDoc)
+      return NextResponse.json(
+        { success: false, message: "File not found" },
+        { status: 404 }
+      );
+
+    return NextResponse.json({ success: true, file: deletedDoc });
   } catch (err: unknown) {
-    return new Response(JSON.stringify({ success: false, message: err.message }), { status: 500 });
+    const message = err instanceof Error ? err.message : "Error";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

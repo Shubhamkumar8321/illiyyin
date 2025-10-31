@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Ensure campaignId is ObjectId
+    // ✅ Validate & convert to ObjectId
     const campaignObjectId = new mongoose.Types.ObjectId(campaignId);
 
     const newComment = await Comment.create({
@@ -24,15 +24,20 @@ export async function POST(req: Request) {
       user: user || "Anonymous",
       text,
       amount: amount || 0,
+      createdAt: new Date(),
     });
 
     console.log("✅ Comment saved:", newComment);
 
-    return NextResponse.json({ success: true, data: newComment });
+    return NextResponse.json({ success: true, data: newComment }, { status: 201 });
   } catch (error: unknown) {
     console.error("🚨 Error saving comment:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Failed to save comment";
+
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to save comment" },
+      { success: false, message },
       { status: 500 }
     );
   }

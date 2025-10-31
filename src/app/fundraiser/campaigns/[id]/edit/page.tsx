@@ -54,15 +54,13 @@ export default function FundEditPage() {
     if (!html) return "";
     let fixedHTML = html;
 
-    // 1️⃣ Fix relative image paths (prepend /uploads or domain if needed)
+    // Fix relative image paths
     fixedHTML = fixedHTML.replace(
       /<img([^>]*?)src=["'](?!https?:|data:)([^"']+)["']/g,
       `<img$1src="/$2"`
     );
 
-    // 2️⃣ Ensure proper closing tags for malformed markup
     fixedHTML = fixedHTML.replace(/<\/?p[^>]*>/g, (tag) => tag.toLowerCase());
-
     return fixedHTML;
   }
 
@@ -82,13 +80,13 @@ export default function FundEditPage() {
         const data = await res.json();
         const fetched = data.data;
 
-        // ✅ Always ensure "content" has valid HTML
         const html = normalizeHTMLContent(
           fetched.content || fetched.description || ""
         );
         setDraft({ ...fetched, content: html });
       } catch (err: unknown) {
-        setError(err.message || "Something went wrong");
+        const msg = err instanceof Error ? err.message : "Something went wrong";
+        setError(msg);
       } finally {
         setLoading(false);
       }
@@ -119,7 +117,8 @@ export default function FundEditPage() {
 
       router.push(`/fundraiser/campaigns/${id}`);
     } catch (err: unknown) {
-      setError(err.message || "Something went wrong");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -148,7 +147,7 @@ export default function FundEditPage() {
             required
           />
 
-          {/* ✅ Editor that always shows images */}
+          {/* ✅ Editor */}
           {mounted && (
             <Editor
               apiKey={tinyMCEApiKey}
@@ -184,6 +183,8 @@ export default function FundEditPage() {
                 ],
                 toolbar:
                   "undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright | bullist numlist outdent indent | removeformat | image | code | preview",
+
+                // ✅ Upload image through API
                 images_upload_handler: async (blobInfo: TinyMCEBlobInfo) => {
                   const formData = new FormData();
                   formData.append("file", blobInfo.blob(), blobInfo.filename());
@@ -193,24 +194,34 @@ export default function FundEditPage() {
                   });
                   if (!resp.ok) throw new Error("Upload failed");
                   const json = await resp.json();
-                  return json.location as string;
+                  return String(json.location);
                 },
+
                 file_picker_types: "image",
+
+                // ✅ Fix TS error here
                 file_picker_callback: (cb) => {
                   const input = document.createElement("input");
                   input.type = "file";
                   input.accept = "image/*";
-                  input.onchange = async (e: unknown) => {
-                    const file = e.target.files[0];
+
+                  input.onchange = async (ev) => {
+                    const target = ev.target as HTMLInputElement;
+                    const file = target.files?.[0];
+                    if (!file) return;
+
                     const formData = new FormData();
                     formData.append("file", file);
+
                     const resp = await fetch("/api/upload", {
                       method: "POST",
                       body: formData,
                     });
+
                     const json = await resp.json();
-                    cb(json.location, { title: file.name });
+                    cb(String(json.location), { title: file.name });
                   };
+
                   input.click();
                 },
               }}

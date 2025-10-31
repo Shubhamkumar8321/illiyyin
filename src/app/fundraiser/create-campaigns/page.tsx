@@ -120,7 +120,11 @@ export default function CreateCampaign() {
       localStorage.removeItem("fundraisingData");
     } catch (err: unknown) {
       console.error("❌ Campaign creation error:", err);
-      setError(err.message || "Something went wrong");
+
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
+
+      setError(message);
     } finally {
       setLoading(false);
     }

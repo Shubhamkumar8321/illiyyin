@@ -83,10 +83,19 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
   };
 
   const getOrganizerName = (): string => {
-    const org = (campaign as unknown).organizer;
+    const org = (campaign as { organizer?: unknown })?.organizer;
+
     if (!org) return "Unknown";
+
+    // ✅ If organizer is a string
     if (typeof org === "string") return org;
-    if (typeof org === "object" && "name" in org) return org.name || "Unknown";
+
+    // ✅ If organizer is an object with a `name` field
+    if (typeof org === "object" && org && "name" in org) {
+      const name = (org as { name?: string }).name;
+      return name || "Unknown";
+    }
+
     return "Unknown";
   };
 

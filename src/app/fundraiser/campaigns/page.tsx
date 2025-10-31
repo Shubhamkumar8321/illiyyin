@@ -25,7 +25,9 @@ export default function CampaignList() {
           throw new Error(result.message || "Failed to fetch");
         setCampaigns(Array.isArray(result.data) ? result.data : []);
       } catch (err: unknown) {
-        setError(err.message || "Something went wrong");
+        const message =
+          err instanceof Error ? err.message : "Something went wrong";
+        setError(message);
       } finally {
         setLoading(false);
       }

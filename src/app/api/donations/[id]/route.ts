@@ -1,22 +1,31 @@
 import { NextResponse } from "next/server";
-import{connectDB}  from "@/lib/mongodb";
+import { connectDB } from "@/lib/mongodb";
 import Donation from "@/models/Donation";
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+// ✅ Next.js 15 param type
+interface ParamsPromise {
+  params: Promise<{ id: string }>;
+}
+
+export async function GET(_req: Request, context: ParamsPromise) {
   try {
+    const { id } = await context.params; // ✅ FIX
+
     await connectDB();
-    const donations = await Donation.find({ campaignId: params.id })
+
+    const donations = await Donation.find({ campaignId: id })
       .sort({ createdAt: -1 })
       .lean();
 
     return NextResponse.json({ success: true, data: donations });
   } catch (err: unknown) {
     console.error("Error fetching donations:", err);
+
+    const message =
+      err instanceof Error ? err.message : "Error loading donations";
+
     return NextResponse.json(
-      { success: false, message: "Error loading donations" },
+      { success: false, message },
       { status: 500 }
     );
   }

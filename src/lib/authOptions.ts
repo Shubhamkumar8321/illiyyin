@@ -1,7 +1,12 @@
 import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthOptions } from "next-auth";
-import { connectDB } from "@/lib/mongodb"; // Mongo connection helper
-import User from "@/models/User"; // Mongoose user model
+import { connectDB } from "@/lib/mongodb";
+import User from "@/models/User";
+
+// 👇 Custom type so we can safely assign `role`
+interface ExtendedUser {
+  role?: string;
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -11,16 +16,15 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
 
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    // ✅ When user signs in
+    /** ✅ When user signs in — create record if new */
     async signIn({ user }) {
       await connectDB();
+
       let existingUser = await User.findOne({ email: user.email });
 
       if (!existingUser) {
@@ -28,30 +32,34 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           image: user.image,
-          role: "user", // default
+          role: "user",
         });
       }
 
-      (user as unknown).role = existingUser.role;
+      // ✅ assign role safely
+      (user as ExtendedUser).role = existingUser.role;
+
       return true;
     },
 
-    // ✅ On every JWT create / update
+    /** ✅ Attach role into JWT */
     async jwt({ token, user }) {
       await connectDB();
+
       if (user) {
-        token.role = (user as unknown).role;
+        token.role = (user as ExtendedUser).role;
       } else {
         const dbUser = await User.findOne({ email: token.email });
         token.role = dbUser?.role || "user";
       }
+
       return token;
     },
 
-    // ✅ Add role to session
+    /** ✅ Attach role into session */
     async session({ session, token }) {
-      if (token?.role) {
-        (session.user as unknown).role = token.role;
+      if (token?.role && session.user) {
+        (session.user as ExtendedUser).role = token.role as string;
       }
       return session;
     },

@@ -44,7 +44,9 @@ export default function CampaignDetail() {
 
         setCampaign(result.data);
       } catch (err: unknown) {
-        setError(err.message || "Something went wrong");
+        const message =
+          err instanceof Error ? err.message : "Something went wrong";
+        setError(message);
       } finally {
         setLoading(false);
       }

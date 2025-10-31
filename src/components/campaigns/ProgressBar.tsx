@@ -9,13 +9,9 @@ interface ProgressBarProps {
 }
 
 const ProgressBar = ({ value, max, thin = false }: ProgressBarProps) => {
-  const [percent, setPercent] = useState(0);
   const height = thin ? 4 : 8; // thin = 4px, default = 8px
 
-  useEffect(() => {
-    const newPercent = Math.min(100, (value / max) * 100);
-    setPercent(newPercent);
-  }, [value, max]);
+  const percent = Math.min(100, (value / max) * 100);
 
   return (
     <div

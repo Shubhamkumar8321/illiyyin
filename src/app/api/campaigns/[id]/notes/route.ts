@@ -1,20 +1,19 @@
-import { NextResponse } from "next/server";
-import {connectDB} from "@/lib/mongodb";
+import { NextResponse, NextRequest } from "next/server";
+import { connectDB } from "@/lib/mongodb";
 import Campaign from "@/models/Campaign";
 
-// Define expected route parameters
-interface RouteParams {
-  params: {
-    id: string;
-  };
+// ✅ Correct type for Next.js 15 dynamic route params
+interface ParamsPromise {
+  params: Promise<{ id: string }>;
 }
 
 // ✅ GET — Fetch all notes for a campaign
-export async function GET(req: Request, { params }: RouteParams) {
+export async function GET(req: NextRequest, context: ParamsPromise) {
   try {
+    const { id } = await context.params; // ✅ Fix here
     await connectDB();
 
-    const campaign = await Campaign.findById(params.id).select("notes");
+    const campaign = await Campaign.findById(id).select("notes");
     if (!campaign) {
       return NextResponse.json(
         { success: false, message: "Campaign not found" },
@@ -33,12 +32,12 @@ export async function GET(req: Request, { params }: RouteParams) {
 }
 
 // ✅ POST — Add new note to campaign
-export async function POST(req: Request, { params }: RouteParams) {
+export async function POST(req: NextRequest, context: ParamsPromise) {
   try {
+    const { id } = await context.params; // ✅ Fix here
     await connectDB();
 
-    const body = await req.json();
-    const text: string = body.text;
+    const { text } = await req.json();
 
     if (!text || !text.trim()) {
       return NextResponse.json(
@@ -47,7 +46,7 @@ export async function POST(req: Request, { params }: RouteParams) {
       );
     }
 
-    const campaign = await Campaign.findById(params.id);
+    const campaign = await Campaign.findById(id);
     if (!campaign) {
       return NextResponse.json(
         { success: false, message: "Campaign not found" },
@@ -55,7 +54,6 @@ export async function POST(req: Request, { params }: RouteParams) {
       );
     }
 
-    // Add new note at the top
     const newNote = { text: text.trim(), createdAt: new Date() };
     campaign.notes.unshift(newNote);
     await campaign.save();

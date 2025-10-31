@@ -5,12 +5,11 @@ import mongoose from "mongoose";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ✅ Correct type
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // ✅ Await params
 
-    // ✅ Validate Mongo ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { success: false, message: "Invalid campaign ID" },
@@ -39,9 +38,9 @@ export async function POST(
       data: updated,
     });
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Error approving campaign";
-
-    return NextResponse.json({ success: false, message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Server error approving campaign" },
+      { status: 500 }
+    );
   }
 }
