@@ -10,13 +10,17 @@ export async function GET(req: Request) {
     const fundraiserId = searchParams.get("fundraiserId");
     const status = searchParams.get("status");
 
-    const filter: any = {};
+    // ✅ Fix: remove any
+    const filter: Record<string, unknown> = {};
+
     if (fundraiserId) filter.fundraiserId = fundraiserId;
     if (status) filter.status = status;
 
     const campaigns = await Campaign.find(filter)
       .sort({ createdAt: -1 })
-      .select("_id title goal raised category status images fundraiserId createdAt")
+      .select(
+        "_id title goal raised category status images fundraiserId createdAt"
+      )
       .lean();
 
     return NextResponse.json({ success: true, campaigns });

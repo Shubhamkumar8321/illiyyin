@@ -28,6 +28,7 @@ export default function AdminFundraiserListPage() {
 
   useEffect(() => {
     let mounted = true;
+
     const fetchFundraisers = async () => {
       try {
         const res = await fetch("/api/admin/fundraisers");
@@ -35,16 +36,20 @@ export default function AdminFundraiserListPage() {
           const txt = await res.text();
           throw new Error(txt || `HTTP ${res.status}`);
         }
+
         const data = await res.json();
         if (!mounted) return;
+
         if (data.success) {
           setFundraisers(data.fundraisers || []);
         } else {
           setError(data.message || "Failed to load fundraisers");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Fetch error:", err);
-        if (mounted) setError(err.message || "Something went wrong");
+        if (mounted) {
+          setError(err instanceof Error ? err.message : "Something went wrong");
+        }
       } finally {
         if (mounted) setLoading(false);
       }

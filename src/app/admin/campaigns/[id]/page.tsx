@@ -3,29 +3,45 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+interface Campaign {
+  title: string;
+  category: string;
+  goal: number;
+  raised: number;
+  status: string;
+  endDate: string;
+  isFeatured: boolean;
+  images?: string[];
+  description?: string;
+  content?: string;
+}
+
+interface Note {
+  text: string;
+  createdAt: string;
+}
+
 export default function AdminCampaignDetail() {
   const params = useParams();
   const router = useRouter();
   const campaignId = params.id as string;
 
-  const [campaign, setCampaign] = useState<any>(null);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 📝 Notes
-  const [notes, setNotes] = useState<any[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [newNote, setNewNote] = useState("");
   const [page, setPage] = useState(1);
   const perPage = 5;
 
-  // ✅ Universal image sanitizer — works for TinyMCE HTML and DB URLs
   const normalizeHTML = (html: string) => {
     if (!html) return "<em>No description provided.</em>";
 
     return html
       .replace(
         /<img([^>]*?)src=["'](?!https?:|data:)([^"']+)["']/gi,
-        (_match, before, src) => {
+        (_m, before, src) => {
           let fixed = src.replace(/^(\.\.\/|\.\/)/, "");
           if (!fixed.startsWith("/")) fixed = "/" + fixed;
           return `<img${before}src="${fixed}"`;
@@ -37,7 +53,6 @@ export default function AdminCampaignDetail() {
       );
   };
 
-  // ✅ Safe image URL resolver
   const getSafeImageUrl = (url: string) => {
     if (!url) return "/placeholder.jpg";
     const isDataUrl = url.startsWith("data:image/");
@@ -47,7 +62,7 @@ export default function AdminCampaignDetail() {
     return `/uploads/${url}`;
   };
 
-  // ✅ Fetch campaign from DB
+  // ✅ Fetch campaign
   useEffect(() => {
     const fetchCampaign = async () => {
       try {
@@ -59,8 +74,7 @@ export default function AdminCampaignDetail() {
         } else {
           setError("Campaign not found");
         }
-      } catch (err) {
-        console.error(err);
+      } catch {
         setError("Failed to fetch campaign");
       } finally {
         setLoading(false);
@@ -70,7 +84,7 @@ export default function AdminCampaignDetail() {
     fetchCampaign();
   }, [campaignId]);
 
-  // ✅ Fetch notes from DB
+  // ✅ Fetch notes
   useEffect(() => {
     const fetchNotes = async () => {
       try {
@@ -87,7 +101,7 @@ export default function AdminCampaignDetail() {
     fetchNotes();
   }, [campaignId]);
 
-  // ✅ Add note to DB
+  // ✅ Add note
   const addNote = async () => {
     if (!newNote.trim()) return;
 
@@ -115,7 +129,6 @@ export default function AdminCampaignDetail() {
   const totalPages = Math.ceil(notes.length / perPage) || 1;
   const currentNotes = notes.slice((page - 1) * perPage, page * perPage);
 
-  // ✅ Loading & error handling
   if (loading)
     return <p className="p-6 text-center text-gray-500">Loading campaign...</p>;
 
@@ -134,7 +147,6 @@ export default function AdminCampaignDetail() {
       </div>
     );
 
-  // ✅ Ensure valid images
   const imageList =
     Array.isArray(campaign.images) && campaign.images.length > 0
       ? campaign.images
@@ -142,7 +154,7 @@ export default function AdminCampaignDetail() {
 
   return (
     <div className="p-6 space-y-8 bg-white shadow-lg rounded-xl max-w-6xl mx-auto mt-6">
-      {/* 📄 Campaign Info */}
+      {/* Campaign Info */}
       <div className="space-y-4">
         <h2 className="text-3xl font-bold text-gray-800">{campaign.title}</h2>
 
@@ -178,9 +190,9 @@ export default function AdminCampaignDetail() {
             <strong>Featured:</strong> {campaign.isFeatured ? "🌟 Yes" : "— No"}
           </p>
         </div>
-        {/* 🧾 Description (TinyMCE HTML with universal image support) */}
+
         <div className="mt-6">
-          <strong className="text-gray-800">Description:</strong>
+          <strong>Description:</strong>
           <div
             className="mt-2 p-4 border rounded bg-gray-50 text-gray-800 leading-relaxed prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{
@@ -194,7 +206,7 @@ export default function AdminCampaignDetail() {
         </div>
       </div>
 
-      {/* 📝 Admin Notes Section */}
+      {/* Notes */}
       <div className="pt-6 border-t border-gray-200">
         <h3 className="text-2xl font-semibold mb-4 text-gray-800">
           📝 Admin Notes
@@ -218,13 +230,12 @@ export default function AdminCampaignDetail() {
               ))}
             </ul>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center mt-4 space-x-4">
                 <button
                   onClick={() => setPage((p) => Math.max(p - 1, 1))}
                   disabled={page === 1}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300"
                 >
                   Prev
                 </button>
@@ -234,7 +245,7 @@ export default function AdminCampaignDetail() {
                 <button
                   onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
                   disabled={page === totalPages}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300"
                 >
                   Next
                 </button>
@@ -243,7 +254,6 @@ export default function AdminCampaignDetail() {
           </>
         )}
 
-        {/* Add Note */}
         <div className="mt-6 flex flex-col md:flex-row gap-2">
           <input
             type="text"
@@ -261,11 +271,10 @@ export default function AdminCampaignDetail() {
         </div>
       </div>
 
-      {/* ⬅ Back Button */}
       <div className="border-t pt-4">
         <button
           onClick={() => router.push("/admin/campaigns")}
-          className="mt-4 px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded transition"
+          className="mt-4 px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded"
         >
           ⬅ Back to Campaigns
         </button>

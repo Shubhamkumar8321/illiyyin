@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+interface AdminUser {
+  name: string;
+  email: string;
+  role: string;
+  createdAt: string;
+}
+
 export default function AdminDetailsPage() {
-  const [admin, setAdmin] = useState<any>(null);
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,6 +20,7 @@ export default function AdminDetailsPage() {
       try {
         const res = await fetch("/api/admin/details");
         const data = await res.json();
+
         if (data.success) {
           setAdmin(data.admin);
         } else {
