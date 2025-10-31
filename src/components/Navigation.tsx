@@ -237,6 +237,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Menu, Search, X, Globe, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CenteredLoginSignupModal, { User } from "./LoginModel";
@@ -248,6 +249,7 @@ const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [hydrated, setHydrated] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const placeholders = [
@@ -258,33 +260,30 @@ const Navbar: React.FC = () => {
   ];
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
-  // ✅ Hydration ready
+  // ✅ Hydrate client only
   useEffect(() => {
     setHydrated(true);
   }, []);
 
-  // ✅ Load user from localStorage (only client)
+  // ✅ Load user safely
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        setUser(JSON.parse(stored) as User);
-      }
-    } catch {
-      setUser(null);
+    const stored = localStorage.getItem("user");
+    if (stored) {
+      const parsed = JSON.parse(stored) as User;
+      setTimeout(() => setUser(parsed), 0); // ✅ avoids direct setState in effect
     }
   }, []);
 
-  // ✅ Placeholder animation
+  // ✅ Rotate placeholders
   useEffect(() => {
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [placeholders.length]);
 
-  // ✅ Close profile dropdown when clicking outside
+  // ✅ Close dropdown outside click
   useEffect(() => {
     const handler = (event: MouseEvent) => {
       if (
@@ -298,22 +297,19 @@ const Navbar: React.FC = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ✅ After login
   const handleLoginSuccess = (userData: User) => {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
-  // ✅ Logout
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    setMobileMenuOpen(false);
     setDropdownOpen(false);
+    setMobileMenuOpen(false);
   };
 
-  // ✅ Dashboard redirect
   const dashboardLink =
     user?.role === "admin"
       ? "/admin"
@@ -324,7 +320,7 @@ const Navbar: React.FC = () => {
   return (
     <header className="fixed top-0 left-0 w-full z-50 backdrop-blur-lg bg-white/60">
       <nav className="flex items-center justify-between px-4 md:px-24 py-4 relative">
-        {/* ======= Left: Login / User ======= */}
+        {/* Left - Login */}
         <div className="hidden md:flex items-center gap-4 flex-1">
           {!hydrated ? null : !user ? (
             <button
@@ -363,12 +359,12 @@ const Navbar: React.FC = () => {
                       </div>
                     </div>
 
-                    <a
+                    <Link
                       href={dashboardLink}
                       className="block px-3 py-2 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100"
                     >
                       Dashboard
-                    </a>
+                    </Link>
 
                     <button
                       onClick={handleLogout}
@@ -383,12 +379,12 @@ const Navbar: React.FC = () => {
           )}
         </div>
 
-        {/* ===== Logo ===== */}
+        {/* Logo */}
         <h1 className="font-bold text-lg md:text-xl mx-auto md:mx-0">
           ILLIYY<span>IN</span>
         </h1>
 
-        {/* ===== Search (Desktop) ===== */}
+        {/* Search */}
         <div className="flex items-center gap-2 md:gap-4 flex-1 justify-end">
           <div className="hidden md:flex relative items-center border border-[#094C3B] rounded-full overflow-hidden max-w-xs">
             <input
@@ -402,7 +398,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* ===== Mobile Menu Button ===== */}
+        {/* Mobile Button */}
         <button
           onClick={() => setMobileMenuOpen((prev) => !prev)}
           className="border border-[#094C3B] text-[#094C3B] rounded-full p-2 ml-8 hover:bg-[#094C3B] hover:text-white"
@@ -410,7 +406,7 @@ const Navbar: React.FC = () => {
           {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
 
-        {/* ===== Mobile Dropdown ===== */}
+        {/* Mobile Menu */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -421,12 +417,12 @@ const Navbar: React.FC = () => {
             >
               <ul className="flex flex-col gap-2">
                 <li>
-                  <a
+                  <Link
                     href="/campaigns"
                     className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
                   >
                     <Globe size={18} /> Discover Campaigns
-                  </a>
+                  </Link>
                 </li>
 
                 {!user ? (
@@ -444,12 +440,12 @@ const Navbar: React.FC = () => {
                 ) : (
                   <>
                     <li>
-                      <a
+                      <Link
                         href={dashboardLink}
                         className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
                       >
                         Dashboard
-                      </a>
+                      </Link>
                     </li>
                     <li>
                       <button
@@ -467,7 +463,7 @@ const Navbar: React.FC = () => {
         </AnimatePresence>
       </nav>
 
-      {/* ✅ Login Modal */}
+      {/* Login Modal */}
       <CenteredLoginSignupModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
