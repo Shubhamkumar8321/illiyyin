@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   Rocket,
   CheckCircle2,
-  Sparkles,
   Leaf,
   Globe2,
   Heart,
