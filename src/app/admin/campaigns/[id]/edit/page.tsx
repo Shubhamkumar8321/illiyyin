@@ -15,6 +15,19 @@ interface TinyMCEBlobInfo {
   filename: () => string;
 }
 
+interface CampaignForm {
+  title: string;
+  description: string;
+  category: string;
+  goal: string;
+  endDate: string;
+  isFeatured: boolean;
+}
+
+interface UploadResponse {
+  location: string;
+}
+
 const tinyMCEApiKey = "z5vh0ddczzx3mymq1w8u9vbp4usbm66sp02g17wlf3jtnl91";
 
 const categories = [
@@ -26,18 +39,13 @@ const categories = [
   "Emergency",
 ];
 
-// ✅ Normalize any HTML from DB before displaying
+// ✅ Fix image src from MongoDB
 function normalizeHTMLContent(html: string): string {
   if (!html) return "";
-
-  // Fix relative image paths to absolute URLs
   return html.replace(
     /<img([^>]*?)src=["'](?!https?:|data:)([^"']+)["']/gi,
     (_match, before, src) => {
-      let fixed = src;
-      // Remove starting ../ or ./ if any
-      fixed = fixed.replace(/^(\.\.\/|\.\/)/, "");
-      // Add leading slash if missing
+      let fixed = src.replace(/^(\.\.\/|\.\/)/, "");
       if (!fixed.startsWith("/")) fixed = "/" + fixed;
       return `<img${before}src="${fixed}"`;
     }
@@ -49,7 +57,7 @@ export default function EditCampaign() {
   const router = useRouter();
   const editorRef = useRef<TinyMCEEditor | null>(null);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<CampaignForm>({
     title: "",
     description: "",
     category: "",
@@ -63,9 +71,10 @@ export default function EditCampaign() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ Fetch campaign from DB
+  // ✅ Fetch campaign
   useEffect(() => {
     setMounted(true);
+
     const fetchCampaign = async () => {
       try {
         const res = await fetch(`/api/campaigns/${id}`, { cache: "no-store" });
@@ -85,17 +94,19 @@ export default function EditCampaign() {
           endDate: c.endDate?.slice(0, 10) || "",
           isFeatured: c.isFeatured || false,
         });
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Error fetching campaign");
+      } catch (err: unknown) {
+        setError(
+          err instanceof Error ? err.message : "Error fetching campaign"
+        );
       } finally {
         setLoading(false);
       }
     };
+
     fetchCampaign();
   }, [id]);
 
-  // ✅ Save updates
+  // ✅ Save campaign
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -105,7 +116,6 @@ export default function EditCampaign() {
       ? editorRef.current.getContent()
       : form.description;
 
-    // Extract all image URLs to store separately
     const images: string[] = [];
     const regex = /<img[^>]+src=["']([^"']+)["']/g;
     let match;
@@ -123,12 +133,13 @@ export default function EditCampaign() {
           images,
         }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Update failed");
+
       router.push(`/admin/campaigns/${id}`);
-    } catch (err: any) {
-      console.error("Save error:", err);
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -140,12 +151,13 @@ export default function EditCampaign() {
   return (
     <div className="ml-4 max-w-6xl p-6 bg-white shadow-md rounded">
       <h1 className="text-2xl font-bold mb-6">Edit Campaign</h1>
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-600 rounded">{error}</div>
       )}
 
       <form onSubmit={handleSave} className="flex flex-col md:flex-row gap-6">
-        {/* LEFT SIDE */}
+        {/* LEFT */}
         <div className="flex-1 flex flex-col gap-4">
           <input
             type="text"
@@ -156,7 +168,6 @@ export default function EditCampaign() {
             required
           />
 
-          {/* ✅ TinyMCE Editor with full image support */}
           {mounted && (
             <Editor
               apiKey={tinyMCEApiKey}
@@ -165,11 +176,6 @@ export default function EditCampaign() {
               init={{
                 height: 450,
                 menubar: true,
-                automatic_uploads: true,
-                images_reuse_filename: true,
-                convert_urls: false,
-                relative_urls: false,
-                remove_script_host: false,
                 plugins: [
                   "advlist",
                   "autolink",
@@ -198,26 +204,32 @@ export default function EditCampaign() {
                     method: "POST",
                     body: formData,
                   });
-                  if (!resp.ok) throw new Error("Upload failed");
-                  const json = await resp.json();
-                  return json.location as string;
+                  const json = (await resp.json()) as UploadResponse;
+                  return json.location;
                 },
                 file_picker_types: "image",
                 file_picker_callback: (cb) => {
                   const input = document.createElement("input");
                   input.type = "file";
                   input.accept = "image/*";
-                  input.onchange = async (e: any) => {
-                    const file = e.target.files[0];
+
+                  input.onchange = async (e) => {
+                    const target = e.target as HTMLInputElement | null;
+                    const file = target?.files?.[0];
+                    if (!file) return;
+
                     const formData = new FormData();
                     formData.append("file", file);
+
                     const resp = await fetch("/api/upload", {
                       method: "POST",
                       body: formData,
                     });
-                    const json = await resp.json();
+
+                    const json = (await resp.json()) as UploadResponse;
                     cb(json.location, { title: file.name });
                   };
+
                   input.click();
                 },
               }}
@@ -228,7 +240,7 @@ export default function EditCampaign() {
           )}
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT */}
         <div className="w-72 flex flex-col gap-4 p-4 bg-white/70 rounded shadow-md">
           <button
             type="submit"
@@ -238,7 +250,6 @@ export default function EditCampaign() {
             {saving ? "Saving..." : "Save Changes"}
           </button>
 
-          {/* Category */}
           <div className="flex flex-col gap-1">
             <label className="font-medium">Category</label>
             <select
@@ -256,7 +267,6 @@ export default function EditCampaign() {
             </select>
           </div>
 
-          {/* Goal */}
           <div className="flex flex-col gap-1">
             <label className="font-medium">Goal (₹)</label>
             <input
@@ -268,7 +278,6 @@ export default function EditCampaign() {
             />
           </div>
 
-          {/* End Date */}
           <div className="flex flex-col gap-1">
             <label className="font-medium">End Date</label>
             <input
@@ -280,7 +289,6 @@ export default function EditCampaign() {
             />
           </div>
 
-          {/* Featured */}
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -293,7 +301,6 @@ export default function EditCampaign() {
             <label className="font-medium">Feature this campaign</label>
           </div>
 
-          {/* Cancel */}
           <button
             type="button"
             className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
