@@ -162,7 +162,7 @@ export default function AdminDashboard() {
                 >
                   <div>
                     <h4
-                      className="text-lg font-semibold text-gray-900 line-clamp-1 cursor-pointer hover:text-blue-600"
+                      className="text-lg font-semibold text-gray-900 line-clamp-1 cursor-pointer hover:text-[#094C3B]"
                       onClick={() => router.push(`/campaigns/${c._id}`)}
                     >
                       {title || "Untitled Campaign"}
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="w-full bg-gray-200 h-2 rounded-full">
                         <div
-                          className="h-2 bg-blue-600 rounded-full transition-all"
+                          className="h-2 bg-[#094C3B] rounded-full transition-all"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                   <div className="mt-5 flex gap-2">
                     <button
                       onClick={() => router.push(`/campaigns/${c._id}`)}
-                      className="w-1/2 bg-blue-600 text-white text-sm font-medium py-2 rounded-full hover:bg-blue-700 transition"
+                      className="w-1/2 bg-[#094C3B] text-white text-sm font-medium py-2 rounded-full hover:bg-[#094C5e] transition"
                     >
                       View
                     </button>

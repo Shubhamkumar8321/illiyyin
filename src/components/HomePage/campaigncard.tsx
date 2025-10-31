@@ -209,7 +209,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, router }) => {
         <div className="flex gap-2 mt-auto">
           <button
             onClick={() => router.push(`/campaigns/${campaign._id}`)}
-            className="w-[65%] bg-blue-600 text-white text-xs sm:text-sm font-medium py-2 rounded-full hover:bg-blue-700 transition"
+            className="w-[65%] bg-[#2B8C73] text-gray-200 text-xs sm:text-sm font-medium py-2 rounded-full hover:bg-[#2B8C80] transition"
           >
             Donate Now
           </button>
@@ -219,7 +219,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, router }) => {
               e.stopPropagation();
               setOpenShare(true);
             }}
-            className="w-[35%] flex items-center justify-center gap-1 border border-gray-400 text-gray-700 text-xs sm:text-sm font-medium py-2 rounded-full hover:bg-gray-100 transition"
+            className="w-[35%] flex items-center justify-center gap-1 border border-[#094C3B]  text-[#094C3B] text-xs sm:text-sm font-medium py-2 rounded-full hover:bg-gray-100 transition"
           >
             <Share2 size={16} />
             <span className="sm:inline">Share</span>

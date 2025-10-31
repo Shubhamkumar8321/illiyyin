@@ -50,7 +50,9 @@ const FundraiseOptions: React.FC = () => {
                 </h3>
                 <p className="text-gray-600 text-sm mt-2">{opt.desc}</p>
               </div>
-              <span className="mt-4 text-blue-600 font-semibold">Select ›</span>
+              <span className="mt-4 text-[#094C3B] font-semibold">
+                Select ›
+              </span>
             </button>
           ))}
         </div>

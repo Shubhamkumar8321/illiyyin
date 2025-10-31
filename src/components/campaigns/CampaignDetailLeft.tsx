@@ -102,7 +102,7 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
 
       {/* 💰 Mobile-only Amount / Progress Section */}
       <div className="lg:hidden bg-white rounded-xl shadow-md p-6 text-center space-y-4 mt-4">
-        <p className="text-4xl font-bold text-green-600">
+        <p className="text-4xl font-bold text-[#2B8C73]">
           ₹{campaign.raised?.toLocaleString() ?? 0}
         </p>
         <p className="text-gray-500 text-sm">
@@ -122,13 +122,13 @@ const CampaignDetailLeft = ({ campaign }: { campaign: Campaign }) => {
             onClick={() =>
               (window.location.href = `/payment?campaignId=${campaign._id}`)
             }
-            className="w-full sm:w-1/2 bg-green-600 text-white py-2 rounded-full font-semibold hover:bg-green-700 transition"
+            className="w-full sm:w-1/2 bg-[#2B8C73] text-white py-2 rounded-full font-semibold hover:bg-green-700 transition"
           >
             Donate
           </button>
           <button
             onClick={() => (window.location.href = `#share`)}
-            className="w-full sm:w-1/2 border border-gray-300 py-2 rounded-full font-semibold hover:bg-gray-100 transition"
+            className="w-full sm:w-1/2 border border-[#2B8C73] py-2 rounded-full font-semibold hover:bg-gray-100 transition"
           >
             Share
           </button>

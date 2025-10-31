@@ -195,7 +195,7 @@ export default function CreateCampaign() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            className="px-6 py-2 bg-[#094C3B] text-white rounded hover:bg-[#094C3B] disabled:opacity-50"
           >
             {loading ? "Saving..." : "Save Campaign"}
           </button>

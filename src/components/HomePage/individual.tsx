@@ -25,7 +25,7 @@ const Individual = () => {
           <p className="text-gray-700 text-base mb-6">
             Help deliver essential aid and long-term relief to Gaza.
           </p>
-          <button className="px-8 py-3 bg-black text-white font-semibold rounded-full hover:bg-gray-800 transition">
+          <button className="px-8 py-3 bg-[#2B8C73] text-white font-semibold rounded-full hover:bg-gray-200 transition">
             Donate now
           </button>
         </div>
@@ -38,7 +38,7 @@ const Individual = () => {
           <p className="text-gray-700 text-lg mb-6 animate-slideInLeft delay-150">
             Help deliver essential aid and long-term relief to Gaza.
           </p>
-          <button className="mt-6 sm:mt-8 px-8 sm:px-16 py-2.5 sm:py-3 bg-black text-white rounded-full text-sm sm:text-lg font-semibold shadow-md hover:scale-105 hover:shadow-lg transition">
+          <button className="mt-6 sm:mt-8 px-8 sm:px-16 py-2.5 sm:py-3 bg-[#2B8C73] text-white rounded-full text-sm sm:text-lg font-semibold shadow-md hover:scale-105 hover:shadow-lg transition">
             Donate Now
           </button>
         </div>

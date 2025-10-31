@@ -81,7 +81,7 @@ export default function FundraisingPage() {
       <motion.h1
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-indigo-700 mb-6 sm:mb-10 text-center leading-snug"
+        className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#094C3B] mb-6 sm:mb-10 text-center leading-snug"
       >
         Start Your Fundraising Journey
       </motion.h1>
@@ -91,25 +91,25 @@ export default function FundraisingPage() {
           <div key={num} className="flex flex-col items-center w-full">
             <div className="relative flex items-center justify-center">
               {step > num ? (
-                <CheckCircle2 className="text-green-500 w-6 h-6 sm:w-8 sm:h-8" />
+                <CheckCircle2 className="text-[#094C3B] w-6 h-6 sm:w-8 sm:h-8" />
               ) : (
                 <Circle
                   className={`w-6 h-6 sm:w-8 sm:h-8 transition ${
-                    step === num ? "text-indigo-500" : "text-gray-300"
+                    step === num ? "text-[#094C3B]" : "text-gray-300"
                   }`}
                 />
               )}
               {num < totalSteps && (
                 <div
                   className={`absolute top-1/2 -right-[50%] transform -translate-y-1/2 w-full h-[2px] sm:h-[3px] ${
-                    step > num ? "bg-green-500" : "bg-gray-300"
+                    step > num ? "bg-[#094C3B]" : "bg-gray-300"
                   }`}
                 />
               )}
             </div>
             <p
               className={`text-[11px] sm:text-xs md:text-sm mt-1 sm:mt-2 ${
-                step === num ? "text-indigo-600 font-semibold" : "text-gray-500"
+                step === num ? "text-[#094C3B] font-semibold" : "text-gray-500"
               }`}
             >
               {num === 1
@@ -171,7 +171,7 @@ export default function FundraisingPage() {
           )}
           <button
             onClick={nextStep}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md transition"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#2B8C73] hover:bg-[#2B8C80] text-white font-semibold shadow-md transition"
           >
             {step === totalSteps ? "Finish & Continue" : "Continue →"}
           </button>
@@ -266,7 +266,7 @@ function Step1({ formData, setFormData, errors }: any) {
               onClick={() => update("reason", tag)}
               className={`border rounded-full px-4 sm:px-5 py-2 text-sm transition-all duration-200 ${
                 formData.reason === tag
-                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                  ? "bg-[#2B8C73] text-white border-indigo-600 shadow-sm"
                   : "border-gray-300 hover:bg-indigo-50 hover:border-indigo-500"
               }`}
             >
@@ -353,7 +353,7 @@ function Step3({ formData, setFormData, errors }: any) {
       </p>
 
       <div className="flex items-center gap-2 sm:gap-3 mb-5 sm:mb-6">
-        <span className="font-semibold text-indigo-600 text-lg sm:text-xl">
+        <span className="font-semibold text-[#094C3B] text-lg sm:text-xl">
           ₹
         </span>
         <input

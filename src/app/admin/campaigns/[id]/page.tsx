@@ -254,7 +254,7 @@ export default function AdminCampaignDetail() {
           />
           <button
             onClick={addNote}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded transition"
+            className="bg-[#094C3B] hover:bg-[#094C5e] text-white px-6 py-3 rounded transition"
           >
             Add
           </button>

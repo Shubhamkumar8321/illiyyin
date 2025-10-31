@@ -23,7 +23,7 @@ const ProgressBar = ({ value, max, thin = false }: ProgressBarProps) => {
       style={{ height: `${height}px` }}
     >
       <div
-        className="bg-green-600 h-full rounded-full transition-all duration-500 ease-out"
+        className="bg-[#094C3B] h-full rounded-full transition-all duration-500 ease-out"
         style={{ width: `${percent}%` }}
       ></div>
     </div>

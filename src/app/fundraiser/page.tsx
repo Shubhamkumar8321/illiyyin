@@ -211,7 +211,7 @@ export default function FundDashboard() {
                   <div className="mt-5 flex gap-2">
                     <button
                       onClick={() => router.push(`/campaigns/${c._id}`)}
-                      className="w-1/2 bg-blue-600 text-white text-sm font-medium py-2 rounded-full hover:bg-blue-700 transition"
+                      className="w-1/2 bg-[#094C3B] text-white text-sm font-medium py-2 rounded-full hover:bg-[#094C3B] transition"
                     >
                       View
                     </button>

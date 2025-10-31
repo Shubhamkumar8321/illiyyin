@@ -7,24 +7,30 @@ import { Share2 } from "lucide-react";
 import { Campaign } from "@/types/campaign";
 import SharePopup from "@/components/share";
 
+interface Supporter {
+  _id: string;
+  name: string;
+  amount: number;
+  comment?: string;
+  createdAt: string;
+}
+
 const CampaignSidebar = ({ campaign }: { campaign: Campaign }) => {
   const [openShare, setOpenShare] = useState(false);
   const [liveCampaign, setLiveCampaign] = useState<Campaign | null>(null);
+  const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingSupporters, setLoadingSupporters] = useState(true);
 
   const router = useRouter();
 
-  // ✅ Fetch updated campaign from DB (to get supporters, donations, etc.)
+  // ✅ Fetch campaign info (for raised amount)
   useEffect(() => {
     const fetchCampaign = async () => {
       try {
         const res = await fetch(`/api/campaigns/${campaign._id}`);
         const data = await res.json();
-        if (data.success) {
-          setLiveCampaign(data.campaign);
-        } else {
-          console.error("Failed to load campaign data:", data.message);
-        }
+        if (data.success) setLiveCampaign(data.campaign);
       } catch (error) {
         console.error("Error fetching campaign:", error);
       } finally {
@@ -32,12 +38,26 @@ const CampaignSidebar = ({ campaign }: { campaign: Campaign }) => {
       }
     };
 
-    if (campaign?._id) {
-      fetchCampaign();
-    }
+    if (campaign?._id) fetchCampaign();
   }, [campaign?._id]);
 
-  // 🧠 Use fetched data if available
+  // ✅ Fetch real supporters (from donations DB)
+  useEffect(() => {
+    const fetchSupporters = async () => {
+      try {
+        const res = await fetch(`/api/donations/${campaign._id}`);
+        const data = await res.json();
+        if (data.success) setSupporters(data.data);
+      } catch (err) {
+        console.error("Error loading supporters:", err);
+      } finally {
+        setLoadingSupporters(false);
+      }
+    };
+
+    if (campaign?._id) fetchSupporters();
+  }, [campaign?._id]);
+
   const c = liveCampaign || campaign;
 
   const handleDonationClick = (amount: number) => {
@@ -45,9 +65,7 @@ const CampaignSidebar = ({ campaign }: { campaign: Campaign }) => {
   };
 
   if (loading)
-    return (
-      <div className="text-center text-gray-500 p-4">Loading campaign...</div>
-    );
+    return <div className="text-center text-gray-500 p-4">Loading...</div>;
 
   return (
     <>
@@ -55,7 +73,7 @@ const CampaignSidebar = ({ campaign }: { campaign: Campaign }) => {
         {/* 🟩 Raised Info */}
         <div className="hidden md:block bg-white rounded-xl shadow-lg p-5 space-y-6 w-full max-w-sm mt-4">
           <div className="text-center">
-            <p className="text-6xl font-bold text-green-600">
+            <p className="text-6xl font-bold text-[#094C3B]">
               ₹{c.raised?.toLocaleString() ?? 0}
             </p>
             <p className="text-sm text-gray-500 mt-1">
@@ -68,13 +86,13 @@ const CampaignSidebar = ({ campaign }: { campaign: Campaign }) => {
           </div>
 
           <div className="text-center text-sm text-gray-700 font-medium -mt-4">
-            {c.supporters?.length ?? 0} Supporters
+            {supporters.length} Supporters
           </div>
 
           <div className="flex flex-col gap-3">
             <button
               onClick={() => router.push(`/payment?campaignId=${c._id}`)}
-              className="w-full bg-green-600 text-white py-2 rounded-full font-semibold hover:bg-green-700 transition"
+              className="w-full bg-[#094C3B] text-white py-2 rounded-full font-semibold hover:bg-[#094C3a] transition"
             >
               Donate
             </button>
@@ -98,7 +116,7 @@ const CampaignSidebar = ({ campaign }: { campaign: Campaign }) => {
                 <div
                   key={i}
                   onClick={() => handleDonationClick(d.amount)}
-                  className="border rounded-md p-3 hover:border-green-600 cursor-pointer transition"
+                  className="border rounded-md p-3 hover:border-[#094C3B] cursor-pointer transition"
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-lg font-bold text-gray-800">
@@ -113,71 +131,45 @@ const CampaignSidebar = ({ campaign }: { campaign: Campaign }) => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">
-              No donation options available.
-            </p>
+            <p className="text-gray-500 text-sm">No donation options yet.</p>
           )}
         </div>
 
-        {/* 💞 Share + Supporters */}
+        {/* 💞 Supporters */}
         <div className="bg-gray-100 w-full max-w-sm p-5 rounded-xl shadow-lg">
-          <div className="text-left mb-5">
-            <p className="text-gray-800 font-medium mb-3">
-              Your share could raise over{" "}
-              <span className="font-semibold">₹77</span>
-            </p>
-            <button
-              onClick={() => setOpenShare(true)}
-              className="w-1/2 bg-black text-white py-3 rounded-full font-semibold flex items-center justify-center gap-2 hover:bg-gray-900 transition"
-            >
-              Share <span className="text-lg">›</span>
-            </button>
-          </div>
+          <h3 className="font-semibold mb-4 text-lg">Recent Supporters 💚</h3>
 
-          <div className="mt-4">
-            <h3 className="font-semibold mb-3 text-lg">Recent Supporters</h3>
-
-            <div
-              className="max-h-[500px] overflow-y-auto p-2 [&::-webkit-scrollbar]:hidden"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {c.supporters?.length ? (
-                <ul className="space-y-4 text-sm">
-                  {c.supporters.map((s, i) => (
-                    <li key={i} className="flex flex-col border-b pb-3">
-                      <div className="flex items-center gap-3">
-                        {s.avatar ? (
-                          <img
-                            src={s.avatar}
-                            alt={s.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-300 text-white flex items-center justify-center font-semibold text-sm">
-                            {s.name?.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span className="font-semibold text-gray-800 text-[16px] -mt-4">
-                          {s.name}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 -mt-4 ml-12">
-                        <span className="font-semibold text-green-700">
-                          ₹{s.amount}
-                        </span>
-                        <span className="text-gray-500 text-xs">
-                          {s.daysAgo ? `${s.daysAgo} days ago` : "Just now"}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 text-sm">No supporters yet.</p>
-              )}
-            </div>
-          </div>
+          {loadingSupporters ? (
+            <p className="text-gray-500 text-sm">Loading supporters...</p>
+          ) : supporters.length === 0 ? (
+            <p className="text-gray-500 text-sm">No supporters yet.</p>
+          ) : (
+            <ul className="space-y-4 text-sm max-h-[400px] overflow-y-auto [&::-webkit-scrollbar]:hidden">
+              {supporters.map((s) => (
+                <li
+                  key={s._id}
+                  className="flex flex-col border-b border-gray-200 pb-3"
+                >
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-800">
+                      {s.name || "Anonymous"}
+                    </span>
+                    <span className="font-semibold text-[#2B8C73]">
+                      ₹{s.amount}
+                    </span>
+                  </div>
+                  {s.comment && (
+                    <p className="text-gray-600 text-xs italic mt-1">
+                      “{s.comment}”
+                    </p>
+                  )}
+                  <p className="text-gray-400 text-xs mt-1">
+                    {new Date(s.createdAt).toLocaleDateString()}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 

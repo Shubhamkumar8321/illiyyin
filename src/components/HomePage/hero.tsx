@@ -14,7 +14,7 @@ const HeroSection: React.FC = () => {
         <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8">
           Make every day count by giving daily.
         </p>
-        <button className="mt-6 sm:mt-8 px-8 sm:px-16 py-2.5 sm:py-3 bg-white text-black rounded-full font-medium text-base sm:text-lg hover:bg-gray-800 hover:text-white transition-all duration-300 shadow-md">
+        <button className="mt-6 sm:mt-8 px-8 sm:px-16 py-2.5 sm:py-3 bg-white text-black rounded-full font-medium text-base sm:text-lg hover:bg-gray-200 hover:text-black transition-all duration-300 shadow-md">
           Start now!
         </button>
       </div>

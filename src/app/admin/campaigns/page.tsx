@@ -271,7 +271,7 @@ export default function CampaignList() {
             <tr key={c._id} className="border-t hover:bg-gray-50 transition">
               {/* Title */}
               <td
-                className="p-3 text-blue-600 font-semibold cursor-pointer hover:underline"
+                className="p-3 text-[#094C3B] font-semibold cursor-pointer hover:underline"
                 onClick={() => router.push(`/admin/campaigns/${c._id}`)}
               >
                 {c.title}

@@ -251,7 +251,7 @@ export default function CampaignDetail() {
           Back
         </button>
         <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-[#094C3B] text-white rounded hover:bg-[#094C3B]"
           onClick={() =>
             router.push(`/fundraiser/campaigns/${campaign._id}/edit`)
           }

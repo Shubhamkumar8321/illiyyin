@@ -57,7 +57,7 @@ const FeatureSection: React.FC = () => {
         {/* Heading */}
         <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
           Fundraise with a{" "}
-          <span className="text-purple-600">trusted community</span> that
+          <span className="text-[#094C3B] ">trusted community</span> that
           believes in giving
         </h2>
 
@@ -89,14 +89,14 @@ const FeatureSection: React.FC = () => {
                   <img
                     className={`rounded-full shadow-lg border-2 sm:border-4 border-white object-cover ${
                       index === Math.floor(visibleCount / 2)
-                        ? "w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 ring-2 sm:ring-4 ring-purple-500"
+                        ? "w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 ring-2 sm:ring-4 ring-[#094C3B] "
                         : "w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24"
                     }`}
                     src={img}
                     alt="Trusted user"
                   />
                   {index === Math.floor(visibleCount / 2) && (
-                    <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] sm:text-xs md:text-sm font-medium px-2 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-md animate-bounce">
+                    <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 -translate-x-1/2 bg-[#094C3B]  text-white text-[10px] sm:text-xs md:text-sm font-medium px-2 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-md animate-bounce">
                       Trusted
                     </div>
                   )}
@@ -106,7 +106,7 @@ const FeatureSection: React.FC = () => {
         </div>
 
         {/* CTA */}
-        <button className="mt-6 sm:mt-8 px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full text-sm sm:text-lg font-semibold shadow-md hover:scale-105 hover:shadow-lg transition">
+        <button className="mt-6 sm:mt-8 px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-[#2B8C73] to-[#2B8C80] text-white rounded-full text-sm sm:text-lg font-semibold shadow-md hover:scale-105 hover:shadow-lg transition">
           🚀 Start Fundraising
         </button>
       </div>

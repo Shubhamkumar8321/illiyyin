@@ -103,7 +103,7 @@ const CenteredLoginSignupModal: React.FC<LoginSignupModalProps> = ({
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border p-2 rounded focus:ring-2 focus:[#094C3B] focus:outline-none"
                 />
                 <input
                   type="text"
@@ -111,13 +111,13 @@ const CenteredLoginSignupModal: React.FC<LoginSignupModalProps> = ({
                   placeholder="Organization (optional)"
                   value={formData.organization}
                   onChange={handleChange}
-                  className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border p-2 rounded focus:ring-2 focus:ring-[#094C3B] focus:outline-none"
                 />
                 <select
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border p-2 rounded focus:ring-2 focus:ring-[#094C3B] focus:outline-none"
                 >
                   <option value="fundraiser">Fundraiser</option>
                   <option value="admin">Admin</option>
@@ -132,7 +132,7 @@ const CenteredLoginSignupModal: React.FC<LoginSignupModalProps> = ({
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full border p-2 rounded focus:ring-2 focus:[#094C3B] focus:outline-none"
             />
             <input
               type="password"
@@ -141,13 +141,13 @@ const CenteredLoginSignupModal: React.FC<LoginSignupModalProps> = ({
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full border p-2 rounded focus:ring-2 focus:[#094C3B] focus:outline-none"
             />
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
+              className="w-full bg-[#094C3B] text-white p-2 rounded hover:bg-[#094C3c] transition"
             >
               {loading
                 ? isLogin
@@ -162,7 +162,7 @@ const CenteredLoginSignupModal: React.FC<LoginSignupModalProps> = ({
           <p className="mt-4 text-center text-gray-600">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <span
-              className="text-blue-500 cursor-pointer font-medium"
+              className="text-[#094C3B] cursor-pointer font-medium"
               onClick={() => {
                 setIsLogin(!isLogin);
                 setError("");

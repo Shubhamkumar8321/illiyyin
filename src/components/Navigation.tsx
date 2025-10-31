@@ -88,7 +88,7 @@ const Navbar: React.FC = () => {
           {!hydrated ? null : !user ? (
             <button
               onClick={() => setModalOpen(true)}
-              className="border border-black text-black px-4 py-1 font-bold rounded-full hover:bg-black hover:text-white transition text-xm"
+              className="border border-[#094C3B] text-[#094C3B] px-4 py-1 font-bold rounded-full hover:bg-[#094C3B] hover:text-white transition text-xm"
             >
               Login
             </button>
@@ -96,7 +96,7 @@ const Navbar: React.FC = () => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((prev) => !prev)}
-                className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold text-lg hover:brightness-110 transition"
+                className="w-10 h-10 rounded-full bg-[#094C3B] text-white flex items-center justify-center font-semibold text-lg hover:brightness-110 transition"
               >
                 {user.name?.charAt(0).toUpperCase()}
               </button>
@@ -111,7 +111,7 @@ const Navbar: React.FC = () => {
                     className="absolute mt-3 w-64 sm:w-72 bg-white shadow-2xl rounded-2xl border p-4 z-50 "
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg">
+                      <div className="w-12 h-12 rounded-full bg-[#094C3B] text-white flex items-center justify-center font-bold text-lg">
                         {user.name?.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -154,7 +154,7 @@ const Navbar: React.FC = () => {
 
         {/* Right - Search */}
         <div className="flex items-center gap-2 md:gap-4 flex-1 justify-end">
-          <div className="hidden md:flex relative items-center border border-black rounded-full overflow-hidden max-w-xs flex-grow">
+          <div className="hidden md:flex relative items-center border border-[#094C3B] rounded-full overflow-hidden max-w-xs flex-grow">
             <input
               type="text"
               value={searchQuery}
@@ -162,14 +162,14 @@ const Navbar: React.FC = () => {
               placeholder={placeholders[placeholderIndex]}
               className="bg-transparent px-4 py-1 w-full focus:outline-none"
             />
-            <Search className="absolute right-2 text-black cursor-pointer" />
+            <Search className="absolute right-2 text-[#094C3B] cursor-pointer" />
           </div>
         </div>
 
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileMenuOpen((prev) => !prev)}
-          className="border border-black text-black rounded-full p-2 hover:bg-black hover:text-white transition ml-8"
+          className="border border-[#094C3B] text-[#094C3B] rounded-full p-2 hover:bg-[#094C3B] hover:text-white transition ml-8"
         >
           {mobileMenuOpen ? (
             <X className="w-5 h-5" />

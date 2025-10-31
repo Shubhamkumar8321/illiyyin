@@ -74,7 +74,7 @@ const ScrollSections: FC = () => {
                 <p className="text-gray-600 text-base sm:text-lg mb-6">
                   {sections[activeIndex].desc}
                 </p>
-                <button className="px-6 py-3 bg-blue-600 text-white rounded-full shadow hover:bg-blue-700 transition">
+                <button className="px-6 py-3 bg-[#2B8C73] text-white rounded-full shadow hover:bg-[#2B8C80] transition">
                   {sections[activeIndex].button}
                 </button>
               </div>
@@ -89,7 +89,7 @@ const ScrollSections: FC = () => {
               key={i}
               onClick={() => setActiveIndex(i)}
               className={`w-3 h-3 rounded-full transition ${
-                activeIndex === i ? "bg-blue-600" : "bg-gray-300"
+                activeIndex === i ? "bg-[#094C3B]" : "bg-gray-300"
               }`}
             />
           ))}

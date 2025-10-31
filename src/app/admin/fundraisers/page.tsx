@@ -94,7 +94,7 @@ export default function AdminFundraiserListPage() {
               <div className="flex-shrink-0 space-x-2">
                 <Link
                   href={`/admin/fundraisers/${f._id}`}
-                  className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-3 py-2 bg-[#094C3B] text-white rounded-md hover:bg-blue-700"
                 >
                   View Details
                 </Link>
