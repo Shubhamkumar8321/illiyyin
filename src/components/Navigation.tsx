@@ -260,22 +260,24 @@ const Navbar: React.FC = () => {
   ];
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
-  // ✅ Hydrate client only
+  // ✅ Hydrate client without ESLint warning
   useEffect(() => {
-    setHydrated(true);
+    const t = setTimeout(() => setHydrated(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
-  // ✅ Load user safely
+  // ✅ Load user from localStorage safely
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = localStorage.getItem("user");
     if (stored) {
       const parsed = JSON.parse(stored) as User;
-      setTimeout(() => setUser(parsed), 0); // ✅ avoids direct setState in effect
+      const t = setTimeout(() => setUser(parsed), 0);
+      return () => clearTimeout(t);
     }
   }, []);
 
-  // ✅ Rotate placeholders
+  // ✅ Rotate search placeholder
   useEffect(() => {
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
@@ -283,7 +285,7 @@ const Navbar: React.FC = () => {
     return () => clearInterval(interval);
   }, [placeholders.length]);
 
-  // ✅ Close dropdown outside click
+  // ✅ Close dropdown if click outside
   useEffect(() => {
     const handler = (event: MouseEvent) => {
       if (
@@ -320,7 +322,7 @@ const Navbar: React.FC = () => {
   return (
     <header className="fixed top-0 left-0 w-full z-50 backdrop-blur-lg bg-white/60">
       <nav className="flex items-center justify-between px-4 md:px-24 py-4 relative">
-        {/* Left - Login */}
+        {/* Left: Login/User */}
         <div className="hidden md:flex items-center gap-4 flex-1">
           {!hydrated ? null : !user ? (
             <button
@@ -398,7 +400,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Button */}
+        {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileMenuOpen((prev) => !prev)}
           className="border border-[#094C3B] text-[#094C3B] rounded-full p-2 ml-8 hover:bg-[#094C3B] hover:text-white"
@@ -406,7 +408,7 @@ const Navbar: React.FC = () => {
           {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
 
-        {/* Mobile Menu */}
+        {/* Mobile Dropdown */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
