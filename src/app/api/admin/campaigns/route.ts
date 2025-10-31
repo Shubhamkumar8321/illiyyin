@@ -10,20 +10,30 @@ export async function GET(req: Request) {
     const fundraiserId = searchParams.get("fundraiserId");
     const status = searchParams.get("status");
 
-    const filter: unknown = {};
+    // ✅ Correct type — a simple query object for mongoose
+    const filter: Record<string, unknown> = {};
+
     if (fundraiserId) filter.fundraiserId = fundraiserId;
     if (status) filter.status = status;
 
     const campaigns = await Campaign.find(filter)
       .sort({ createdAt: -1 })
-      .select("_id title goal raised category status images fundraiserId createdAt")
+      .select(
+        "_id title goal raised category status images fundraiserId createdAt"
+      )
       .lean();
 
     return NextResponse.json({ success: true, campaigns });
-  } catch (error) {
-    console.error("❌ Error fetching campaigns:", error);
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to fetch campaigns";
+
+    console.error("❌ Error fetching campaigns:", message);
+
     return NextResponse.json(
-      { success: false, message: "Failed to fetch campaigns" },
+      { success: false, message },
       { status: 500 }
     );
   }

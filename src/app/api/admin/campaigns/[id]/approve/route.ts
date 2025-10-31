@@ -1,37 +1,47 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Campaign from "@/models/Campaign";
+import mongoose from "mongoose";
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    console.log("🟢 Approving campaign:", params.id);
+    const { id } = params;
+
+    // ✅ Validate Mongo ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid campaign ID" },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
 
-    const updatedCampaign = await Campaign.findByIdAndUpdate(
-      params.id,
+    const updated = await Campaign.findByIdAndUpdate(
+      id,
       { status: "approved" },
       { new: true }
     );
 
-    if (!updatedCampaign) {
+    if (!updated) {
       return NextResponse.json(
         { success: false, message: "Campaign not found" },
         { status: 404 }
       );
     }
 
-    console.log("✅ Campaign approved:", updatedCampaign.title);
-
     return NextResponse.json({
       success: true,
       message: "Campaign approved successfully",
-      campaign: updatedCampaign,
+      data: updated,
     });
-  } catch (error) {
-    console.error("❌ Error approving campaign:", error);
-    return NextResponse.json(
-      { success: false, message: "Error approving campaign" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Error approving campaign";
+
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
