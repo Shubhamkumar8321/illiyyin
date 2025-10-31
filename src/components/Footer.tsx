@@ -3,7 +3,7 @@ import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gradient-to-br from-[#094C3B] via-[#128b6c] to-[#08655b] text-white">
+    <footer className="bg-gradient-to from-[#094C3B] via-[#128b6c] to-[#08655b] text-white">
       {/* Top Section */}
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
         {/* Logo + About */}
