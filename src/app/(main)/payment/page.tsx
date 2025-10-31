@@ -293,8 +293,8 @@ export default function DonationPage() {
         <div className="mt-10">
           <h3 className="text-lg font-semibold mb-2">Help us help the Ummah</h3>
           <p className="text-gray-600 text-sm mb-3">
-            Because Illiyyin doesn't charge a platform fee, we rely on donors
-            like you 💖
+            Because Illiyyin doesn&apos;t charge a platform fee, we rely on
+            donors like you 💖
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <select
